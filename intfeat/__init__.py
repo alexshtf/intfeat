@@ -5,3 +5,4 @@ from .strum_liouville_transformer import (
     StrumLiouvilleTransformer,
     StrumLiouvilleColumnTransformer,
 )
+from .viz import plot_sl_basis
