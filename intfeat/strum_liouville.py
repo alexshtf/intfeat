@@ -53,7 +53,7 @@ class StrumLiouvilleBasis:
         self.weights /= np.sum(self.weights)
 
         match curvature_config:
-            case float() as gamma if gamma > 0:
+            case float() as gamma if gamma >= 0:
                 self.cs = (1 + np.arange(max_val - 1)) ** gamma
             case np.ndarray() as cs if len(cs) == max_val - 1 and np.all(cs > 0):
                 self.cs = cs / np.max(cs)
