@@ -2,6 +2,7 @@ from .strum_liouville import StrumLiouvilleBasis
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils import check_array
+import scipy.sparse as sp
 
 
 def kt_smoothed_histogram(data, max_val, prior=0.5):
@@ -49,6 +50,7 @@ class StrumLiouvilleColumnTransformer:
             self.max_val_ = self.max_val
         else:
             self.max_val_ = int(np.max(X) * 1.1) + 1
+        self.max_val_ = max(self.max_val_, self.num_funcs + 1)
 
         if self.weight_config:
             weight_config = self.weight_config
@@ -88,7 +90,10 @@ class StrumLiouvilleTransformer(BaseEstimator, TransformerMixin):
         self.include_bias = include_bias
 
     def fit(self, X, y=None):
-        X = check_array(X, ensure_2d=True)
+        X = check_array(X, ensure_2d=True, accept_sparse=True)
+        if sp.issparse(X):
+            X = X.toarray()
+
         _, num_cols = X.shape
 
         self.col_transformers = [
@@ -106,7 +111,10 @@ class StrumLiouvilleTransformer(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X, y=None):
-        X = check_array(X, ensure_2d=True)
+        X = check_array(X, ensure_2d=True, accept_sparse=True)
+        if sp.issparse(X):
+            X = X.toarray()
+
         _, num_cols = X.shape
         transformed = [None] * num_cols
         for i in range(num_cols):
