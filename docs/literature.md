@@ -1,0 +1,2 @@
+- Infinite block-diagonal spectrum: https://matem.anrb.ru/sites/default/files/files/vupe43/Braeutigam.pdf#page=16.87
+- 
