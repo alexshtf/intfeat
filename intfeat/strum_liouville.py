@@ -38,7 +38,9 @@ class StrumLiouvilleBasis:
             max_val (int): The maximum value for the basis functions.
             num_funcs (int): The number of basis functions to compute. Must be less than max_val.
             weight_config (tuple or np.ndarray): A tuple containing the weight parameters (alpha, beta).
-            curvature_config (float or np.ndarray): The curvature parameter(s).
+            curvature_config (float or np.ndarray): The curvature parameter(s). A float between 0 and 1 controls the
+                concentration of curvature, where values close to 0 concentrate curvature near small integers,
+                values close to 1 concentrate curvature near large integers, and 0.5 means uniform curvature.
         """
         if num_funcs >= max_val:
             raise ValueError(
@@ -59,7 +61,12 @@ class StrumLiouvilleBasis:
 
         match curvature_config:
             case float() as gamma if gamma >= 0:
-                self.cs = (1 + np.arange(max_val - 1)) ** gamma
+                xs = (1.0 + np.arange(max_val - 1).astype(float)) / (max_val + 1.0)
+                cs = cs = np.exp(
+                    xs * np.log(curvature_config)
+                    + (1 - xs) * np.log1p(-curvature_config)
+                )
+                self.cs = cs / np.max(cs)
             case np.ndarray() as cs if len(cs) == max_val - 1 and np.all(cs > 0):
                 self.cs = cs / np.max(cs)
             case _:
