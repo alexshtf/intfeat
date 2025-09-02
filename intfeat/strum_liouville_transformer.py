@@ -20,6 +20,8 @@ class StrumLiouvilleColumnTransformer:
         weight_config=None,
         curvature_gamma=0.0,
         include_bias=False,
+        max_infer_quantile=0.95,
+        max_infer_factor=1.1,
     ):
         """Initialize an sklearn transformer-like class for transforming one column of data.
 
@@ -35,12 +37,16 @@ class StrumLiouvilleColumnTransformer:
                 Curvature will be determined by conductance weights of the form
                 c(x) = (1 + x)^{-curvature_gamma} for x = 0, 1, ..., max_val - 1.
             include_bias (bool): Whether to include a bias term in the basis functions.
+            max_infer_quantile (float): The quantile to use when infering the maximum range of the feature during fit.
+            max_infer_factor (float): The factor multiplying the quantile for infering maximum during a fit.
         """
         self.num_funcs = num_funcs
         self.max_val = max_val
         self.weight_config = weight_config
         self.curvature_gamma = curvature_gamma
         self.include_bias = include_bias
+        self.max_infer_quantile = max_infer_quantile
+        self.max_infer_factor = max_infer_factor
 
     def fit(self, X, y=None):
         X = np.ravel(X)
@@ -49,7 +55,9 @@ class StrumLiouvilleColumnTransformer:
         if self.max_val:
             self.max_val_ = self.max_val
         else:
-            self.max_val_ = int(np.max(X) * 1.1) + 1
+            self.max_val_ = (
+                int(np.quantile(X, self.max_infer_quantile) * self.max_infer_factor) + 1
+            )
         self.max_val_ = max(self.max_val_, self.num_funcs + 1)
 
         if self.weight_config:
@@ -82,12 +90,16 @@ class StrumLiouvilleTransformer(BaseEstimator, TransformerMixin):
         weight_config=None,
         curvature_gamma=0.0,
         include_bias=False,
+        max_infer_quantile=0.95,
+        max_infer_factor=1.1,
     ):
         self.num_funcs = num_funcs
         self.max_val = max_val
         self.weight_config = weight_config
         self.curvature_gamma = curvature_gamma
         self.include_bias = include_bias
+        self.max_infer_quantile = max_infer_quantile
+        self.max_infer_factor = max_infer_factor
 
     def fit(self, X, y=None):
         X = check_array(X, ensure_2d=True, accept_sparse=True)
@@ -103,6 +115,8 @@ class StrumLiouvilleTransformer(BaseEstimator, TransformerMixin):
                 weight_config=self.weight_config,
                 curvature_gamma=self.curvature_gamma,
                 include_bias=self.include_bias,
+                max_infer_quantile=self.max_infer_quantile,
+                max_infer_factor=self.max_infer_factor,
             )
             for _ in range(num_cols)
         ]
