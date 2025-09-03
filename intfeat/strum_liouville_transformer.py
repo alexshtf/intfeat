@@ -18,7 +18,7 @@ class StrumLiouvilleColumnTransformer:
         *,
         max_val=None,
         weight_config=None,
-        curvature_gamma=0.0,
+        curvature_gamma=0.5,
         include_bias=False,
         max_infer_quantile=0.95,
         max_infer_factor=1.1,
