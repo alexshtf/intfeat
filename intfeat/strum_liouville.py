@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.sparse import diags_array
 from scipy.linalg import eigh_tridiagonal
+from scipy.special import logit
 
 
 def _build_cs_matrix(cs):
@@ -30,7 +31,7 @@ def _compute_eigenfunctions(cs, ws, k):
 
 class StrumLiouvilleBasis:
     def __init__(
-        self, *, max_val=2000, num_funcs=20, weight_config=(1, 1), curvature_config=0.1
+        self, *, max_val=2000, num_funcs=20, weight_config=(1, 1), curvature_config=0.5
     ):
         """Initializes a Strum-Liouville basis with given parameters.
 
@@ -62,10 +63,7 @@ class StrumLiouvilleBasis:
         match curvature_config:
             case float() as gamma if gamma >= 0:
                 xs = (1.0 + np.arange(max_val - 1).astype(float)) / (max_val + 1.0)
-                cs = cs = np.exp(
-                    xs * np.log(curvature_config)
-                    + (1 - xs) * np.log1p(-curvature_config)
-                )
+                cs = xs ** logit(gamma)
                 self.cs = cs / np.max(cs)
             case np.ndarray() as cs if len(cs) == max_val - 1 and np.all(cs > 0):
                 self.cs = cs / np.max(cs)
