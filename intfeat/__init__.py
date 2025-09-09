@@ -6,4 +6,4 @@ from .strum_liouville_transformer import (
     StrumLiouvilleColumnTransformer,
 )
 from .viz import plot_sl_basis
-from .hist_fit import fit_hist, HistogramFitter
+from .hist_fit import fit_laplacian_hist, LaplacianHistogramFitter

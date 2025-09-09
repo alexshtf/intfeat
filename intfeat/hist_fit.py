@@ -4,7 +4,18 @@ from sklearn.utils.validation import column_or_1d
 from sklearn.utils import as_float_array
 
 
-def fit_hist(hist, num_coefs=10, shaping_strength=1):
+class HistogramFitter:
+    def fit(self, data):
+        pass
+
+    def pmf(self, x=None):
+        pass
+
+    def tail_cutoff(self):
+        pass
+
+
+def fit_laplacian_hist(hist, num_coefs=10, shaping_strength=1):
     """
     Fit a histogram to a set of coefficients.
     """
@@ -25,14 +36,14 @@ def fit_hist(hist, num_coefs=10, shaping_strength=1):
     return apx_hist, eigvals, eigvecs
 
 
-class HistogramFitter:
+class LaplacianHistogramFitter(HistogramFitter):
     def __init__(
         self,
         num_coefs: int = 10,
         max_val: int = 65536,
         quantile: float = 0.99,
         quantile_factor: float = 1.1,
-        min_prob: float = 1e-8,
+        min_prob_factor: float = 1e-3,
     ):
         """
         Fit a histogram to data.
@@ -41,7 +52,7 @@ class HistogramFitter:
         self.max_val = max_val
         self.quantile = quantile
         self.quantile_factor = quantile_factor
-        self.min_prob = min_prob
+        self.min_prob_factor = min_prob_factor
 
     def fit(self, data):
         # convert to 1D numpy array of correct type
@@ -54,9 +65,10 @@ class HistogramFitter:
         # compute histogram
         hist = as_float_array(np.bincount(data, minlength=self.cutoff_))
         hist /= np.sum(hist)
+        self.hist_ = hist
 
         # fit histogram using eigenspace projection
-        apx_hist, _, _ = fit_hist(
+        apx_hist, _, _ = fit_laplacian_hist(
             hist,
             self.num_coefs,
         )
@@ -74,8 +86,12 @@ class HistogramFitter:
             return self.cdf_
         return self.cdf_[x]
 
+    def tail_cutoff(self):
+        return self.cutoff_
+
     def _normalize(self, apx_hist):
-        apx_hist = np.maximum(apx_hist, self.min_prob)
+        min_prob = self.min_prob_factor / self.cutoff_
+        apx_hist = (np.hypot(2 * min_prob, apx_hist) + apx_hist) / 2
         return apx_hist / np.sum(apx_hist)
 
     def _get_cutoff(self, col):
