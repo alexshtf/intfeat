@@ -3,16 +3,7 @@ import scipy
 from sklearn.utils.validation import column_or_1d
 from sklearn.utils import as_float_array
 
-
-class HistogramFitter:
-    def fit(self, data):
-        pass
-
-    def pmf(self, x=None):
-        pass
-
-    def tail_cutoff(self):
-        pass
+from .orth_base import HistogramFitter
 
 
 def fit_laplacian_hist(hist, num_coefs=10, shaping_strength=1):
