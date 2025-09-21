@@ -16,4 +16,7 @@ dependencies = [
  "optuna>=4.5.0",
  "ucimlrepo>=0.0.7",
  "polars>=1.33.0",
+ "tensordict>=0.10.0",
+ "torch>=2.8.0",
+ "rpy2>=3.6.3",
 ]
