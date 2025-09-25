@@ -664,6 +664,7 @@ dependencies = [
     { name = "seaborn" },
     { name = "tensordict" },
     { name = "torch" },
+    { name = "tqdm" },
     { name = "ucimlrepo" },
 ]
 
@@ -682,6 +683,7 @@ requires-dist = [
     { name = "seaborn", specifier = ">=0.11.0" },
     { name = "tensordict", specifier = ">=0.10.0" },
     { name = "torch", specifier = ">=2.8.0" },
+    { name = "tqdm", specifier = ">=4.67.1" },
     { name = "ucimlrepo", specifier = ">=0.0.7" },
 ]
 

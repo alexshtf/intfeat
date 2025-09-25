@@ -19,4 +19,5 @@ dependencies = [
  "tensordict>=0.10.0",
  "torch>=2.8.0",
  "rpy2>=3.6.3",
+ "tqdm>=4.67.1",
 ]
