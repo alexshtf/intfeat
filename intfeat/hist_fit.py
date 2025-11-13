@@ -2,7 +2,7 @@ import numpy as np
 import scipy
 from sklearn.utils.validation import column_or_1d
 from sklearn.utils import as_float_array
-
+from typing import Tuple
 from .orth_base import HistogramFitter
 
 
@@ -27,31 +27,75 @@ def fit_laplacian_hist(hist, num_coefs=10, shaping_strength=1):
     return apx_hist, eigvals, eigvecs
 
 
+class CutoffStrategy:
+    def __init__(
+        self, max_val: int = 65536, quantile: float = 0.99, quantile_factor: float = 1.1
+    ):
+        self.max_val = max_val
+        self.quantile = quantile
+        self.quantile_factor = quantile_factor
+
+    def get_cutoff(self, col) -> Tuple[float, np.typing.NDArray]:
+        max_col = np.max(col).item()
+        if max_col < self.max_val:
+            return max_col, col
+
+        high_quantile = np.quantile(col, self.quantile)
+        cutoff = int(min(high_quantile * self.quantile_factor, self.max_val))
+        clipped = np.clip(col, 0, cutoff)
+        return cutoff, clipped
+
+
+class KTHistogramFitter(HistogramFitter):
+    def __init__(
+        self, cutoff_strategy: CutoffStrategy | None = None, prior_count: float = 0.5
+    ):
+        self.cutoff_strategy = (
+            cutoff_strategy if cutoff_strategy is not None else CutoffStrategy()
+        )
+        self.prior_count = prior_count
+
+    def fit(self, data):
+        data = column_or_1d(data, dtype=[np.int64, np.int32, np.int16])
+        self.cutoff_, data = self.cutoff_strategy.get_cutoff(data)
+
+        counts = np.bincount(data, minlength=self.cutoff_)
+        self.apx_hist_ = (counts + self.prior_count) / (
+            np.sum(counts) + self.prior_count * len(counts)
+        )
+        self.cdf_ = np.cumsum(self.apx_hist_)
+
+    def pmf(self, x=None):
+        if x is None:
+            return self.apx_hist_
+        return self.apx_hist_[x]
+
+    def cdf(self, x=None):
+        if x is None:
+            return self.cdf_
+        return self.cdf_[x]
+
+    def tail_cutoff(self):
+        return self.cutoff_
+
+
 class LaplacianHistogramFitter(HistogramFitter):
     def __init__(
         self,
-        num_coefs: int = 10,
-        max_val: int = 65536,
-        quantile: float = 0.99,
-        quantile_factor: float = 1.1,
+        cutoff_strategy: CutoffStrategy | None = None,
         min_prob_factor: float = 1e-3,
     ):
         """
         Fit a histogram to data.
         """
-        self.num_coefs = num_coefs
-        self.max_val = max_val
-        self.quantile = quantile
-        self.quantile_factor = quantile_factor
+        self.cutoff_strategy = (
+            cutoff_strategy if cutoff_strategy is not None else CutoffStrategy()
+        )
         self.min_prob_factor = min_prob_factor
 
     def fit(self, data):
-        # convert to 1D numpy array of correct type
         data = column_or_1d(data, dtype=[np.int64, np.int32, np.int16])
-
-        # cut-off data
-        self.cutoff_ = self._get_cutoff(data)
-        data = np.clip(data, 0, self.cutoff_)
+        self.cutoff_, data = self.cutoff_strategy.get_cutoff(data)
 
         # compute histogram
         hist = as_float_array(np.bincount(data, minlength=self.cutoff_))
@@ -84,11 +128,3 @@ class LaplacianHistogramFitter(HistogramFitter):
         min_prob = self.min_prob_factor / self.cutoff_
         apx_hist = (np.hypot(2 * min_prob, apx_hist) + apx_hist) / 2
         return apx_hist / np.sum(apx_hist)
-
-    def _get_cutoff(self, col):
-        max_col = np.max(col).item()
-        if max_col < self.max_val:
-            return max_col
-
-        high_quantile = np.quantile(col, self.quantile)
-        return int(min(high_quantile * self.quantile_factor, self.max_val))

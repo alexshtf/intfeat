@@ -6,7 +6,7 @@ import scipy.sparse as sp
 from sklearn.utils.validation import column_or_1d
 from .strum_liouville import _compute_eigenfunctions
 from .orth_base import HistogramFitter, CurvatureSpec
-from .hist_fit import LaplacianHistogramFitter
+from .hist_fit import KTHistogramFitter
 
 
 class StrumLiouvilleColumnTransformer:
@@ -27,9 +27,7 @@ class StrumLiouvilleColumnTransformer:
                 spec if used, which imposes _uniform_ curvature everywhere.
         """
         self.num_funcs = num_funcs
-        self.hist_fitter = (
-            LaplacianHistogramFitter() if hist_fitter is None else hist_fitter
-        )
+        self.hist_fitter = KTHistogramFitter() if hist_fitter is None else hist_fitter
         self.curvature_spec = (
             CurvatureSpec() if curvature_spec is None else curvature_spec
         )
