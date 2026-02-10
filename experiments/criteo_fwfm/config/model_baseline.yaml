@@ -1,0 +1,3 @@
+experiment:
+  name: criteo_fwfm_baseline
+  variant: baseline_winner

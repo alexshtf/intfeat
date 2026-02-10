@@ -1,0 +1,3 @@
+experiment:
+  name: criteo_fwfm_sl
+  variant: sl_integer_basis

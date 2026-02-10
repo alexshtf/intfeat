@@ -1,0 +1,132 @@
+experiment:
+  name: criteo_fwfm
+  seed: 42
+  variant: baseline_winner
+
+data:
+  path: ""
+  max_rows: null
+  columns:
+    label: label
+    integer:
+      - I1
+      - I2
+      - I3
+      - I4
+      - I5
+      - I6
+      - I7
+      - I8
+      - I9
+      - I10
+      - I11
+      - I12
+      - I13
+    categorical:
+      - C1
+      - C2
+      - C3
+      - C4
+      - C5
+      - C6
+      - C7
+      - C8
+      - C9
+      - C10
+      - C11
+      - C12
+      - C13
+      - C14
+      - C15
+      - C16
+      - C17
+      - C18
+      - C19
+      - C20
+      - C21
+      - C22
+      - C23
+      - C24
+      - C25
+      - C26
+  split:
+    mode: tail_holdout
+    train_rows: 300000
+    val_rows: 50000
+    test_rows: 50000
+    random_seed: 42
+
+encoding:
+  categorical:
+    min_count: 10
+    missing_token: __MISSING__
+    infrequent_token: __INFREQUENT__
+  integer:
+    low_cardinality_as_categorical: true
+    low_cardinality_threshold: 10
+    low_cardinality_count_mode: non_missing_train_only
+    low_cardinality_report: true
+    force_integer_path: []
+    force_categorical_path: []
+  integer_baseline:
+    negative_prefix: T
+    logsq_prefix: S
+
+model:
+  embedding_dim: 16
+  use_bias: true
+  dropout: 0.0
+  fwfm:
+    init_scale: 0.01
+    enforce_symmetric: true
+    zero_diag: true
+  integer:
+    sl:
+      cap_max: 10000000
+      num_basis: 16
+      hist:
+        prior_count: 0.5
+        cutoff_quantile: 0.99
+        cutoff_factor: 1.1
+      curvature:
+        alpha: 1.0
+        beta: 0.0
+        center: 0.0
+      conductance_eps: 1.0e-8
+      positive_overflow: clip_to_cap
+    bspline:
+      cap_max: 10000000
+      cap_mode: max
+      cap_quantile: 0.99
+      cap_quantile_factor: 1.1
+      degree: 3
+      knots_config: 16
+      normalize_fn: clamp
+      normalization_scale: 1.0
+      out_min: -1.0
+      out_max: 1.0
+      input_map: log1p_cap_to_unit
+      positive_overflow: clip_to_cap
+
+train:
+  batch_size: 4096
+  num_epochs: 20
+  optimizer: adam
+  lr: 0.001
+  weight_decay: 0.0
+  grad_clip_norm: 0.0
+  early_stopping:
+    metric: val_logloss
+    patience: 3
+  device: auto
+
+eval:
+  metrics:
+    - logloss
+    - auc
+
+artifacts:
+  dir: artifacts/criteo_fwfm
+  save_mappings: true
+  save_model: true
+  save_predictions: true
