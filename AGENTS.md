@@ -49,6 +49,16 @@ We keep a lightweight research journal in `journal/`:
 
 The journal should always include the CLI command(s) needed to reproduce a run, and those commands should reference scripts/configs that live in this repo (not `/tmp`).
 
+## Long-Running Jobs (Process)
+
+When running long experiments:
+
+- Start them as detached background jobs so they survive shell/Codex shutdown.
+  - In this environment, prefer `setsid -f ...` (plain `nohup ... &` may get reaped when the tool invocation ends).
+- Write logs into the experiment’s `journal/<date>_<name>/` directory.
+- Prefer `PYTHONUNBUFFERED=1` so `print(...)` shows up promptly in redirected logs.
+- Record the PID and paths (log, sqlite DB, checkpoint) in `journal/.../proceedings.md` so another session can monitor or terminate it.
+
 ## Math Notes (Process)
 
 We maintain a small `math/` directory with summaries of mathematical results that we repeatedly use for reasoning (e.g., variational characterizations, oscillation theorems for tridiagonals, eigenvalue perturbation bounds, graph Laplacian facts).

@@ -213,6 +213,13 @@ class CriteoFeaturePreprocessor:
     def _fit_sl_integer_encoders(
         self, train_df: pd.DataFrame, integer_columns: list[str]
     ) -> dict[str, SLIntegerEncoder]:
+        conductance_family = str(
+            get_config_value(
+                self.config,
+                "model.integer.sl.conductance.family",
+                default="curvature_spec",
+            )
+        )
         sl_config = SLIntegerEncoderConfig(
             cap_max=int(get_config_value(self.config, "model.integer.sl.cap_max", default=10_000_000)),
             num_basis=int(get_config_value(self.config, "model.integer.sl.num_basis", default=16)),
@@ -248,6 +255,28 @@ class CriteoFeaturePreprocessor:
                     self.config,
                     "model.integer.sl.positive_overflow",
                     default="clip_to_cap",
+                )
+            ),
+            conductance_family=conductance_family,
+            uvalley_u0=float(
+                get_config_value(
+                    self.config,
+                    "model.integer.sl.conductance.u_exp_valley.u0",
+                    default=0.0,
+                )
+            ),
+            uvalley_left_slope=float(
+                get_config_value(
+                    self.config,
+                    "model.integer.sl.conductance.u_exp_valley.left_slope",
+                    default=1.0,
+                )
+            ),
+            uvalley_right_slope=float(
+                get_config_value(
+                    self.config,
+                    "model.integer.sl.conductance.u_exp_valley.right_slope",
+                    default=1.0,
                 )
             ),
         )

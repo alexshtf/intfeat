@@ -23,6 +23,10 @@ class SLIntegerEncoderConfig:
     curvature_center: float
     conductance_eps: float
     positive_overflow: str
+    conductance_family: str = "curvature_spec"
+    uvalley_u0: float = 0.0
+    uvalley_left_slope: float = 1.0
+    uvalley_right_slope: float = 1.0
 
 
 class SLIntegerEncoder:
@@ -64,13 +68,7 @@ class SLIntegerEncoder:
             np.sum(counts) + self.config.prior_count * support_size
         )
 
-        curvature = CurvatureSpec(
-            alpha=self.config.curvature_alpha,
-            beta=self.config.curvature_beta,
-            center=self.config.curvature_center,
-        )
-        cs = curvature.compute_weights(np.arange(support_size - 1, dtype=np.float64))
-        cs = np.maximum(cs, self.config.conductance_eps)
+        cs = self._compute_conductances(support_size)
 
         num_basis_eff = min(self.num_basis, support_size)
         _, eigenvectors = _compute_eigenfunctions(cs, ws, num_basis_eff)
@@ -130,6 +128,67 @@ class SLIntegerEncoder:
 
     def fit_transform(self, series: pd.Series) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         return self.fit(series).transform(series)
+
+    def _compute_conductances(self, support_size: int) -> np.ndarray:
+        edges = np.arange(support_size - 1, dtype=np.float64)
+        family = str(self.config.conductance_family or "curvature_spec")
+
+        if family == "curvature_spec":
+            curvature = CurvatureSpec(
+                alpha=self.config.curvature_alpha,
+                beta=self.config.curvature_beta,
+                center=self.config.curvature_center,
+            )
+            cs = curvature.compute_weights(edges)
+        elif family == "u_exp_valley":
+            cs = self._compute_u_exp_valley_conductances(edges)
+        else:
+            raise ValueError(f"Unknown SL conductance family: {family!r}")
+
+        cs = np.asarray(cs, dtype=np.float64)
+        if cs.shape != edges.shape:
+            raise RuntimeError(
+                f"Conductances must have shape {edges.shape}, got {cs.shape}"
+            )
+        if not np.all(np.isfinite(cs)):
+            raise RuntimeError("Non-finite conductances encountered")
+
+        return np.maximum(cs, float(self.config.conductance_eps))
+
+    def _compute_u_exp_valley_conductances(self, edges: np.ndarray) -> np.ndarray:
+        if edges.size == 0:
+            return np.zeros_like(edges, dtype=np.float64)
+
+        max_edge = float(edges[-1])
+        if max_edge <= 0:
+            return np.zeros_like(edges, dtype=np.float64)
+
+        denom = np.log1p(max_edge)
+        if denom <= 0:
+            return np.zeros_like(edges, dtype=np.float64)
+
+        u = np.log1p(edges) / denom
+
+        u0 = float(self.config.uvalley_u0)
+        u0 = float(np.clip(u0, 0.0, 1.0))
+
+        left = max(float(self.config.uvalley_left_slope), 0.0)
+        right = max(float(self.config.uvalley_right_slope), 0.0)
+
+        diff = u - u0
+        # Avoid numerical overflow for extreme slopes by clipping the exponent.
+        clip = 50.0
+        raw = np.where(
+            diff >= 0,
+            np.expm1(np.clip(right * diff, -clip, clip)),
+            np.expm1(np.clip(left * (-diff), -clip, clip)),
+        )
+
+        max_raw = float(np.max(raw))
+        if max_raw <= 0:
+            return np.zeros_like(raw, dtype=np.float64)
+
+        return raw / max_raw
 
     def _fit_cap_value(self, positive_values: np.ndarray) -> int:
         if positive_values.size == 0:

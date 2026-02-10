@@ -36,7 +36,7 @@ Integers are represented as a mixture of a discrete path and an SL basis expansi
   where `{v_i}` / `{a_i}` are learned per-field parameters.
 - The basis is recomputed per column from:
   - a pmf estimate `w` (distribution adaptation),
-  - a conductance schedule `c` from `CurvatureSpec` (region-of-interest / smoothness via edge penalties),
+  - a conductance schedule `c` (region-of-interest / smoothness via edge penalties),
   - a cap/cutoff (to keep the eigenproblem finite).
 
 ### `bspline_integer_basis`
@@ -121,6 +121,22 @@ uv run python -m experiments.criteo_fwfm.run \
   --set model.integer.sl.curvature.alpha=1.0 \
   --set model.integer.sl.curvature.beta=0.6 \
   --set model.integer.sl.curvature.center=0.05
+```
+
+### Example: SL with a heavy-tail-aware u-space valley conductance
+
+This conductance family is designed to place a local "valley" (cheap variation) at `u0`
+in normalized log-space `u=log1p(edge)/log1p(max_edge)`, with asymmetric left/right slopes.
+
+```bash
+uv run python -m experiments.criteo_fwfm.run \
+  --config experiments/criteo_fwfm/config/model_sl.yaml \
+  --config experiments/criteo_fwfm/config/profile_medium.yaml \
+  --set data.path=/path/to/criteo/train.txt \
+  --set model.integer.sl.conductance.family=u_exp_valley \
+  --set model.integer.sl.conductance.u_exp_valley.u0=0.2 \
+  --set model.integer.sl.conductance.u_exp_valley.left_slope=5.0 \
+  --set model.integer.sl.conductance.u_exp_valley.right_slope=2.0
 ```
 
 ### Example: B-spline normalization and clamp controls

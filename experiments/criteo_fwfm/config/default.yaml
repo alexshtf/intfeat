@@ -92,6 +92,14 @@ model:
         alpha: 1.0
         beta: 0.0
         center: 0.0
+      conductance:
+        family: curvature_spec
+        u_exp_valley:
+          # Only used when family == "u_exp_valley".
+          # u is normalized log1p space: u=log1p(edge)/log1p(max_edge)
+          u0: 0.2
+          left_slope: 5.0
+          right_slope: 2.0
       conductance_eps: 1.0e-8
       positive_overflow: clip_to_cap
     bspline:
