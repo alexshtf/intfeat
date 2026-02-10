@@ -20,3 +20,7 @@ Notes:
 
 - This run includes per-trial recomputation of the SL basis (by refitting preprocessing each trial), which makes it substantially slower than tuning only `lr`/`weight_decay`.
 
+Comparison:
+
+- B-spline best-so-far val logloss (separate run, stopped early): `0.47180640675774904`
+- Current SL best val logloss gap: `+0.00074092336530951`

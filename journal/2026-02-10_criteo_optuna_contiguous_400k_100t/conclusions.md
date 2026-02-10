@@ -1,15 +1,15 @@
-# Conclusions (Interim)
+# Conclusions (Stopped Early)
 
-This experiment is still running (B-spline tuning in progress), so conclusions are provisional.
+This experiment was stopped early (we terminated the process) and we treat the best-so-far Optuna results as final for decision-making.
 
-Key observations so far (2026-02-10 21:39 IST snapshot):
+Key observations (2026-02-10 22:48 IST snapshot):
 
-- Best validation logloss so far:
-  - `baseline_winner`: `0.473367065759`
-  - `bspline_integer_basis`: `0.471806406758`
-- Current progress:
-  - `bspline_integer_basis`: 62/100 trials complete
-- B-splines are currently ahead on validation logloss despite SL's intended two-knob story (`w` vs `c`).
+- Best validation logloss (Optuna best trial value):
+  - `baseline_winner`: `0.4733670657590525`
+  - `bspline_integer_basis`: `0.47180640675774904` (72/100 trials complete when stopped)
+- Comparison to SL (separate run):
+  - Best SL conductance sweep val logloss: `0.47254733012305855`
+  - Gap to B-spline on val: `+0.00074092336530951`
 
 Working hypotheses for "why splines win" in this codebase:
 
@@ -18,7 +18,7 @@ Working hypotheses for "why splines win" in this codebase:
 - The SL pmf estimate uses a per-bin `prior_count`; when the per-column cap/support is large, this can flatten `w` and weaken distribution adaptation.
 - We currently only do truncation (first `K` eigenvectors). We do not apply eigenvalue-weighted shrinkage/regularization, which is where the “energy” interpretation of `c` often pays off.
 
-Next:
+Decision:
 
-- Wait for the run to finish to get final retrain val/test metrics per variant.
-- Ensure a comparable SL run is evaluated under the same contiguous-split + retrain/test protocol.
+- Stop baseline/spline HPO for now.
+- Next experiments should only run new SL variants (conductance families, `w` estimation variants, optional warps) until we beat the B-spline benchmark (`~0.471806` val logloss) by a meaningful margin.

@@ -29,17 +29,27 @@ UV_CACHE_DIR=/tmp/uv_cache uv run python -m experiments.criteo_fwfm.optuna_conti
   --output-json journal/2026-02-10_criteo_optuna_contiguous_400k_100t/results.json
 ```
 
-## Live Artifacts (Current Run)
+## Artifacts (Original Run)
 
-- PID file: `/tmp/criteo_optuna_400k_100t.pid`
+- PID file (stale after termination): `/tmp/criteo_optuna_400k_100t.pid`
 - Log: `/tmp/criteo_optuna_400k_100t.log`
 - Intended summary JSON (written at end): `/tmp/criteo_optuna_400k_100t_results.json`
 
 ## Status Snapshot
 
-As of 2026-02-10 21:39 IST (parsed from `/tmp/criteo_optuna_400k_100t.log`):
+As of 2026-02-10 22:48 IST (parsed from `/tmp/criteo_optuna_400k_100t.log`):
 
-- `baseline_winner`: Optuna complete (100/100), best trial val logloss `0.473367065759`
-- `bspline_integer_basis`: Optuna in progress (62/100), best-so-far trial val logloss `0.471806406758`
+- `baseline_winner`: Optuna complete (100/100)
+  - best trial: `31`
+  - best trial val logloss: `0.4733670657590525`
+  - best params: `lr=0.0019861309562720034`, `weight_decay=1.0724458502932633e-06`
+- `bspline_integer_basis`: Optuna stopped early (72/100)
+  - best trial: `37`
+  - best trial val logloss: `0.47180640675774904`
+  - best params: `lr=0.001961117089253444`, `weight_decay=6.748165404097594e-07`
 
-Note: final "retrain with best params" val/test metrics are only produced after each variant finishes.
+Note:
+
+- The process was terminated manually at 72 trials because we already had enough evidence that B-splines are ahead.
+- Termination: killed PID `576515` on 2026-02-10 22:48 IST.
+- The script only writes its summary JSON at the end, so `/tmp/criteo_optuna_400k_100t_results.json` was not produced.
