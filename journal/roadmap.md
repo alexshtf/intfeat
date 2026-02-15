@@ -40,9 +40,17 @@
    - Until SL variants beat the B-spline benchmark by a meaningful margin, do not spend more cycles on baseline/B-spline tuning.
 2. Add a diagonal potential term `q(x)` (missing knob vs the continuous SL form)
    - Motivation: `q(x)` penalizes amplitude (an `L2(q)` term) rather than differences. This may help control tail amplitude of the first `K` modes without changing `w`-orthogonality.
-   - Immediate next experiment: add an inverse-square potential on nodes:
-     - `q(x) = kappa / (x + x_shift)^2`, starting with `kappa=3` (targeting an ~`1/x`-like envelope) and a small `x_shift` (e.g. `1`).
-     - Keep the current best conductance family (`u_exp_valley`) fixed at first and tune only `lr/wd`, then optionally sweep `kappa`.
+   - Important: in the generalized eigenproblem `(L_c + diag(q)) phi = lambda diag(w) phi`, the symmetric tridiagonal that we actually eigensolve sees a diagonal term `q/w`.
+     In other words, we should think in terms of an "effective potential" `V := q/w` that we design, then set `q = w * V`.
+   - We want eigenfunctions whose amplitude is suppressed toward the right/tail (large x), not near zero.
+     That means `V` should increase as we move right, or create a barrier near the right boundary.
+   - Next two experiments (400k contiguous split first; only verify on 1M/200k/200k if we beat B-splines by a meaningful margin):
+     - Confine potential (do this first): work in normalized log-coordinates `u = log1p(x)/log1p(cap) in [0, 1]` and use a monotone confining family
+       `V(u) = kappa * u^p` with `kappa > 0`, `p >= 1`.
+       Tune: `kappa`, `p`, and conductance hyperparameters jointly (plus training hyperparameters like `lr/wd`).
+     - Right-barrier potential (do this second): also in `u`, use a right-end barrier
+       `V(u) = kappa / (1 - u + eps)^2` with `kappa > 0`, `eps > 0`.
+       Tune: `kappa`, `eps`, and conductance hyperparameters jointly (plus `lr/wd`).
    - Success criterion: SL beats B-spline on the 400k contiguous split by a meaningful margin, then confirm on 1M/200k/200k.
 3. Add conductance families that can represent heavy-tail + local ROI
    - Monotone heavy-tail: `c(x) = eps + ((x + x_shift) / x_scale)^p` (p>0).

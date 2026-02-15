@@ -15,13 +15,21 @@ def _build_cs_matrix(cs):
     )
 
 
-def _compute_eigenfunctions(cs, ws, k):
+def _compute_eigenfunctions(cs, ws, k, q=None):
     cs_mat = _build_cs_matrix(cs)
     ds_mat = diags_array((1 / np.sqrt(ws)))
     eig_mat = ds_mat @ cs_mat @ ds_mat
 
     main_diag = eig_mat.diagonal(0)
     off_diag = eig_mat.diagonal(-1)
+    if q is not None:
+        q = np.asarray(q, dtype=np.float64)
+        if q.shape != ws.shape:
+            raise ValueError(f"q must have shape {ws.shape}, got {q.shape}")
+        # Adding a diagonal "potential" corresponds to:
+        #   (L + diag(q)) phi = lambda * diag(w) phi
+        # which becomes a standard eigenproblem for W^{-1/2}(L+Q)W^{-1/2}.
+        main_diag = main_diag + (q / ws)
     vals, vecs = eigh_tridiagonal(
         main_diag, off_diag, select="i", select_range=(0, k - 1)
     )

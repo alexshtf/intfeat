@@ -27,6 +27,11 @@ class SLIntegerEncoderConfig:
     uvalley_u0: float = 0.0
     uvalley_left_slope: float = 1.0
     uvalley_right_slope: float = 1.0
+    potential_family: str = "none"
+    potential_kappa: float = 0.0
+    potential_x0: float = 0.0
+    potential_eps: float = 0.01
+    potential_power: float = 2.0
 
 
 class SLIntegerEncoder:
@@ -69,9 +74,10 @@ class SLIntegerEncoder:
         )
 
         cs = self._compute_conductances(support_size)
+        q = self._compute_potential(ws)
 
         num_basis_eff = min(self.num_basis, support_size)
-        _, eigenvectors = _compute_eigenfunctions(cs, ws, num_basis_eff)
+        _, eigenvectors = _compute_eigenfunctions(cs, ws, num_basis_eff, q=q)
 
         self.basis_matrix = np.zeros((support_size, self.num_basis), dtype=np.float32)
         self.basis_matrix[:, :num_basis_eff] = eigenvectors.astype(np.float32)
@@ -189,6 +195,52 @@ class SLIntegerEncoder:
             return np.zeros_like(raw, dtype=np.float64)
 
         return raw / max_raw
+
+    def _compute_potential(self, ws: np.ndarray) -> np.ndarray | None:
+        family = str(self.config.potential_family or "none")
+        if family in {"none", "null", "off"}:
+            return None
+        kappa = float(self.config.potential_kappa)
+        if kappa == 0.0:
+            return None
+
+        support_size = int(ws.shape[0])
+        max_index = max(support_size - 1, 0)
+        denom = np.log1p(float(max_index))
+        u = (
+            np.zeros(support_size, dtype=np.float64)
+            if denom <= 0
+            else np.log1p(np.arange(support_size, dtype=np.float64)) / denom
+        )
+
+        x0 = float(self.config.potential_x0)
+        if family == "inverse_square":
+            # Left-edge inverse-square: V(x)=kappa/(x+x0)^2, where x is the positive integer value.
+            x = (1.0 + np.arange(support_size, dtype=np.float64)) + x0
+            x = np.maximum(x, 1e-12)
+            v = kappa / (x * x)
+        elif family == "u_right_inverse_square":
+            # Right-edge inverse-square in normalized log1p space u in [0,1]:
+            #   V(u)=kappa/(1-u+eps)^2.
+            eps = max(float(self.config.potential_eps), 1e-12)
+            dist = 1.0 - u
+            v = kappa / ((dist + eps) * (dist + eps))
+        elif family == "u_power":
+            # Monotone increasing confining potential in u:
+            #   V(u)=kappa*u^p.
+            power = max(float(self.config.potential_power), 0.0)
+            v = kappa * np.power(u, power)
+        else:
+            raise ValueError(f"Unknown SL potential family: {family!r}")
+
+        # We solve (L + diag(q)) phi = lambda diag(w) phi, but the symmetric form uses
+        # W^{-1/2}(L + diag(q))W^{-1/2} = W^{-1/2}LW^{-1/2} + diag(q / w).
+        # If we want an effective potential V(x) in the symmetric eigenproblem, we must set
+        # q(x) = w(x) * V(x).
+        q = ws * v
+        if not np.all(np.isfinite(q)):
+            raise RuntimeError("Non-finite potential encountered")
+        return q
 
     def _fit_cap_value(self, positive_values: np.ndarray) -> int:
         if positive_values.size == 0:
