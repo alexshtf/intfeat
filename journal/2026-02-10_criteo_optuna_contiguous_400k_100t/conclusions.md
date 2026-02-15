@@ -8,8 +8,8 @@ Key observations (2026-02-10 22:48 IST snapshot):
   - `baseline_winner`: `0.4733670657590525`
   - `bspline_integer_basis`: `0.47180640675774904` (72/100 trials complete when stopped)
 - Comparison to SL (separate run):
-  - Best SL conductance sweep val logloss: `0.47254733012305855`
-  - Gap to B-spline on val: `+0.00074092336530951`
+  - Best SL(+potential confine) val logloss (2026-02-15): `0.4725398507508993`
+  - Gap to B-spline on val: `+0.0007334439931502845`
 
 Working hypotheses for "why splines win" in this codebase:
 

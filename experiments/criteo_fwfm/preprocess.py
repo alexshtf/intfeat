@@ -279,6 +279,41 @@ class CriteoFeaturePreprocessor:
                     default=1.0,
                 )
             ),
+            potential_family=str(
+                get_config_value(
+                    self.config,
+                    "model.integer.sl.potential.family",
+                    default="none",
+                )
+            ),
+            potential_kappa=float(
+                get_config_value(
+                    self.config,
+                    "model.integer.sl.potential.kappa",
+                    default=0.0,
+                )
+            ),
+            potential_x0=float(
+                get_config_value(
+                    self.config,
+                    "model.integer.sl.potential.x0",
+                    default=0.0,
+                )
+            ),
+            potential_eps=float(
+                get_config_value(
+                    self.config,
+                    "model.integer.sl.potential.eps",
+                    default=0.01,
+                )
+            ),
+            potential_power=float(
+                get_config_value(
+                    self.config,
+                    "model.integer.sl.potential.power",
+                    default=2.0,
+                )
+            ),
         )
 
         encoders: dict[str, SLIntegerEncoder] = {}
