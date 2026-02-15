@@ -61,6 +61,9 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 
+# Allow tracking research logs under journal/
+!journal/**/*.log
+
 # Flask stuff:
 instance/
 .webassets-cache

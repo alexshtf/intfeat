@@ -1,0 +1,18 @@
+{
+  "variant": "baseline_winner",
+  "study_name": "criteo_1m200k_transfer_uvalley_fixed_baseline_winner",
+  "storage_url": "sqlite:///journal/2026-02-11_optuna_transfer_1m_reuse_sl_conductance/study.sqlite3",
+  "target_trials": 100,
+  "completed_trials": 100,
+  "failed_trials": 0,
+  "running_trials": 0,
+  "total_trials_seen": 100,
+  "hpo_seconds": 12830.938296511013,
+  "timestamp": 1770809236.6235576,
+  "best_trial": 64,
+  "best_trial_val_logloss": 0.4587562087230034,
+  "best_params": {
+    "lr": 0.0013029326738979064,
+    "weight_decay": 7.752358507930135e-07
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "study_name": "sl_optuna_u_exp_valley_400k_60t",
+  "storage_url": "sqlite:///journal/2026-02-10_sl_optuna_u_exp_valley_400k_60t/study.sqlite3",
+  "target_trials": 100,
+  "completed_trials": 100,
+  "failed_trials": 0,
+  "running_trials": 1,
+  "total_trials_seen": 101,
+  "hpo_seconds": 7576.291175749997,
+  "timestamp": 1770792003.1168659,
+  "best_trial": 35,
+  "best_trial_val_logloss": 0.4717266761299534,
+  "best_params": {
+    "lr": 0.0017712641824756783,
+    "weight_decay": 1.5946227851910192e-06,
+    "sl_u0": 0.12714125920232416,
+    "sl_left_slope": 0.10599526233947935,
+    "sl_right_slope": 3.508157381375444
+  },
+  "final_val_logloss": 0.4717266761299534,
+  "final_test_logloss": 0.46657057111844014
+}

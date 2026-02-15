@@ -1,0 +1,18 @@
+{
+  "variant": "sl_integer_basis",
+  "study_name": "criteo_1m200k_transfer_uvalley_fixed_sl_integer_basis",
+  "storage_url": "sqlite:///journal/2026-02-11_optuna_transfer_1m_reuse_sl_conductance/study.sqlite3",
+  "target_trials": 100,
+  "completed_trials": 100,
+  "failed_trials": 0,
+  "running_trials": 0,
+  "total_trials_seen": 100,
+  "hpo_seconds": 13686.055656365003,
+  "timestamp": 1770859687.857234,
+  "best_trial": 88,
+  "best_trial_val_logloss": 0.45813371276934095,
+  "best_params": {
+    "lr": 0.001177140375620533,
+    "weight_decay": 1.008201643242563e-08
+  }
+}
