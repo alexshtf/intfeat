@@ -21,4 +21,4 @@ model:
       normalize_fn: clamp
       normalization_scale: 1.0
       degree: 3
-      knots_config: 16
+      knots_config: 10
