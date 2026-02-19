@@ -2,14 +2,14 @@
 
 Code version:
 
-- git rev: (fill after launch)
+- git rev: `b460cef430cf67fefa848fe371adb808dad5fbf7`
 
 ## Command
 
 Paths:
 
 - Log: `journal/2026-02-19_hybrid_bspline_qcap_large_token_sl_i5_tune_400k_100t/run.log`
-- PID: `journal/2026-02-19_hybrid_bspline_qcap_large_token_sl_i5_tune_400k_100t/pid.txt`
+- PID: `journal/2026-02-19_hybrid_bspline_qcap_large_token_sl_i5_tune_400k_100t/pid.txt` (current: `1935739`)
 - Optuna DB: `journal/2026-02-19_hybrid_bspline_qcap_large_token_sl_i5_tune_400k_100t/study.sqlite3`
 - Checkpoint JSON: `journal/2026-02-19_hybrid_bspline_qcap_large_token_sl_i5_tune_400k_100t/checkpoint.json`
 - Results JSON: `journal/2026-02-19_hybrid_bspline_qcap_large_token_sl_i5_tune_400k_100t/results.json`
@@ -40,4 +40,3 @@ setsid -f bash -lc '
     --output-json journal/2026-02-19_hybrid_bspline_qcap_large_token_sl_i5_tune_400k_100t/results.json
 ' </dev/null > journal/2026-02-19_hybrid_bspline_qcap_large_token_sl_i5_tune_400k_100t/run.log 2>&1
 ```
-
