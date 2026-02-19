@@ -2,7 +2,7 @@
 
 Code version:
 
-- git rev: `feee47e52301fb1395c227b9495c9d8f627f4429`
+- git rev: `e6b974098a93a5da39821f72eab53d5cd90fbf8d`
 
 ## Commands
 
@@ -17,7 +17,7 @@ All long-running commands are launched detached via `setsid -f`, with:
 Paths:
 
 - Log: `journal/2026-02-19_bspline_vs_sl_quantilecap_large_token_400k_100t/bspline_run.log`
-- PID: `journal/2026-02-19_bspline_vs_sl_quantilecap_large_token_400k_100t/bspline_pid.txt`
+- PID: `journal/2026-02-19_bspline_vs_sl_quantilecap_large_token_400k_100t/bspline_pid.txt` (current: `1889130`)
 - Optuna DB: `journal/2026-02-19_bspline_vs_sl_quantilecap_large_token_400k_100t/bspline_study.sqlite3`
 - Summary JSON: `journal/2026-02-19_bspline_vs_sl_quantilecap_large_token_400k_100t/bspline_results.json`
 - Interaction matrix: `journal/2026-02-19_bspline_vs_sl_quantilecap_large_token_400k_100t/interaction_matrix_bspline_integer_basis.npz`
@@ -51,7 +51,7 @@ setsid -f bash -lc '
 Paths:
 
 - Log: `journal/2026-02-19_bspline_vs_sl_quantilecap_large_token_400k_100t/sl_run.log`
-- PID: `journal/2026-02-19_bspline_vs_sl_quantilecap_large_token_400k_100t/sl_pid.txt`
+- PID: `journal/2026-02-19_bspline_vs_sl_quantilecap_large_token_400k_100t/sl_pid.txt` (current: `1889183`)
 - Optuna DB: `journal/2026-02-19_bspline_vs_sl_quantilecap_large_token_400k_100t/sl_study.sqlite3`
 - Checkpoint JSON: `journal/2026-02-19_bspline_vs_sl_quantilecap_large_token_400k_100t/sl_checkpoint.json`
 - Summary JSON: `journal/2026-02-19_bspline_vs_sl_quantilecap_large_token_400k_100t/sl_results.json`
