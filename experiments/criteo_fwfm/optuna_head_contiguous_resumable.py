@@ -14,6 +14,7 @@ import torch
 from optuna.trial import TrialState
 
 from .config import resolve_config
+from .interactions import save_interaction_matrix_npz
 from .model.fwfm import build_fwfm_model
 from .preprocess import CriteoFeaturePreprocessor
 from .schema import ALL_COLUMNS, CATEGORICAL_COLUMNS, INTEGER_COLUMNS, LABEL_COLUMN
@@ -444,6 +445,9 @@ def run_variant(
         batch_size=int(final_config["train"]["batch_size"]),
     )
 
+    interaction_matrix_path = args.output_json.parent / f"interaction_matrix_{variant_name}.npz"
+    save_interaction_matrix_npz(model=final_model, out_path=interaction_matrix_path)
+
     result: dict[str, Any] = {
         "variant": variant_name,
         "study_name": study_name,
@@ -460,6 +464,7 @@ def run_variant(
         "final_val_auc": float(final_val_eval["metrics"]["auc"]),
         "final_test_auc": float(final_test_eval["metrics"]["auc"]),
         "checkpoint_json": str(checkpoint_path),
+        "interaction_matrix_path": str(interaction_matrix_path),
     }
 
     if variant_name == "sl_integer_basis" and bool(args.sl_fixed_u_exp_valley):
