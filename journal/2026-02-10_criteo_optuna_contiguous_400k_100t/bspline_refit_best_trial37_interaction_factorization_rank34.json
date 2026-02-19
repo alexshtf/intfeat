@@ -1,0 +1,6 @@
+{
+  "source_interaction_matrix": "journal/2026-02-10_criteo_optuna_contiguous_400k_100t/bspline_refit_best_trial37_interaction_matrix.npz",
+  "rank": 34,
+  "rel_offdiag_err": 3.87098829794503e-05,
+  "factorization_npz": "journal/2026-02-10_criteo_optuna_contiguous_400k_100t/bspline_refit_best_trial37_interaction_factorization_rank34.npz"
+}

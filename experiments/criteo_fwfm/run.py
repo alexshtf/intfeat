@@ -12,6 +12,7 @@ from .artifacts import (
     save_encoder_state,
     save_field_stats,
     save_history,
+    save_interaction_matrix,
     save_metrics,
     save_model,
     save_predictions,
@@ -154,6 +155,7 @@ def main() -> None:
 
     if bool(config["artifacts"].get("save_model", True)):
         save_model(model, run_dir)
+        save_interaction_matrix(model, run_dir)
 
     if bool(config["artifacts"].get("save_predictions", True)):
         save_predictions(

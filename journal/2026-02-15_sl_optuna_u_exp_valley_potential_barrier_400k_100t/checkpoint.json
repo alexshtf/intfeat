@@ -1,0 +1,24 @@
+{
+  "study_name": "sl_u_exp_valley_potential_barrier_400k",
+  "storage_url": "sqlite:///journal/2026-02-15_sl_optuna_u_exp_valley_potential_barrier_400k_100t/study.sqlite3",
+  "target_trials": 100,
+  "completed_trials": 100,
+  "failed_trials": 0,
+  "running_trials": 0,
+  "total_trials_seen": 100,
+  "hpo_seconds": 9256.092724004004,
+  "timestamp": 1771173507.119718,
+  "best_trial": 80,
+  "best_trial_val_logloss": 0.4723620800910768,
+  "best_params": {
+    "lr": 0.0014866479703934165,
+    "weight_decay": 4.2328895342024825e-06,
+    "sl_u0": 0.09062994881433425,
+    "sl_left_slope": 13.469870646441864,
+    "sl_right_slope": 3.233536270863566,
+    "sl_potential_kappa": 0.07363333964878228,
+    "sl_potential_eps": 0.011951423525094157
+  },
+  "final_val_logloss": 0.4723620800910768,
+  "final_test_logloss": 0.46680955940279606
+}

@@ -49,6 +49,11 @@ We keep a lightweight research journal in `journal/`:
 
 The journal should always include the CLI command(s) needed to reproduce a run, and those commands should reference scripts/configs that live in this repo (not `/tmp`).
 
+## FwFM Artifacts (Policy)
+
+- For every `experiments/criteo_fwfm` run, we store the raw *effective* FwFM field interaction matrix `R` as `interaction_matrix.npz` (plus `field_order`) next to the other run artifacts.
+- `R` is defined as `model._interaction_matrix()` (symmetric, zero diagonal); downstream analyses should use this stored matrix rather than re-rendered heatmaps.
+
 ## Long-Running Jobs (Process)
 
 When running long experiments:

@@ -1,0 +1,10 @@
+experiment:
+  name: criteo_fwfm_hybrid_bspline_sl_i11
+  variant: hybrid_bspline_sl
+
+model:
+  integer:
+    hybrid:
+      # Columns that use SL (all other integer columns use B-splines).
+      sl_columns: [I11]
+

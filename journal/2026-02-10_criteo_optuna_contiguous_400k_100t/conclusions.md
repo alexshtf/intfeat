@@ -7,9 +7,13 @@ Key observations (2026-02-10 22:48 IST snapshot):
 - Best validation logloss (Optuna best trial value):
   - `baseline_winner`: `0.4733670657590525`
   - `bspline_integer_basis`: `0.47180640675774904` (72/100 trials complete when stopped)
+- Refit best B-spline config (trial 37 hyperparameters; seed=42) for final eval:
+  - final val logloss: `0.47180640675774904`
+  - final test logloss: `0.46680837257297464`
+  - details: `journal/2026-02-10_criteo_optuna_contiguous_400k_100t/bspline_refit_best_trial37.json`
 - Comparison to SL (separate run):
-  - Best SL(+potential confine) val logloss (2026-02-15): `0.4725398507508993`
-  - Gap to B-spline on val: `+0.0007334439931502845`
+  - Best SL(+potential right-barrier) val logloss (2026-02-15): `0.4723620800910768`
+  - Gap to B-spline on val: `+0.0005556733333277331`
 
 Working hypotheses for "why splines win" in this codebase:
 

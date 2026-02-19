@@ -53,3 +53,25 @@ Note:
 - The process was terminated manually at 72 trials because we already had enough evidence that B-splines are ahead.
 - Termination: killed PID `576515` on 2026-02-10 22:48 IST.
 - The script only writes its summary JSON at the end, so `/tmp/criteo_optuna_400k_100t_results.json` was not produced.
+
+## Refit Best B-spline (Compute Test Logloss)
+
+To compute test logloss for the best B-spline configuration found above (trial 37 hyperparameters):
+
+```bash
+UV_CACHE_DIR=/tmp/uv_cache uv run python -m experiments.criteo_fwfm.refit_contiguous \
+  --data-path /home/alex/datasets/criteo_kaggle_challenge/train.txt \
+  --split-rows 400000 \
+  --variant bspline_integer_basis \
+  --lr 0.001961117089253444 \
+  --weight-decay 6.748165404097594e-07 \
+  --num-epochs 1 \
+  --batch-size 256 \
+  --embedding-dim 8 \
+  --bspline-knots 10 \
+  --output-json journal/2026-02-10_criteo_optuna_contiguous_400k_100t/bspline_refit_best_trial37.json
+```
+
+Output:
+
+- `journal/2026-02-10_criteo_optuna_contiguous_400k_100t/bspline_refit_best_trial37.json`

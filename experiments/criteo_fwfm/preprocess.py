@@ -16,6 +16,24 @@ from .schema import CATEGORICAL_COLUMNS, INTEGER_COLUMNS, LABEL_COLUMN
 from .types import EncodedSplit, FieldArrayData, FieldSpec, FieldStat
 
 
+def _deep_merge_dict(base: dict[str, Any], update: dict[str, Any]) -> dict[str, Any]:
+    """Recursively merge two nested dicts (update wins).
+
+    This intentionally mirrors the YAML config merge semantics used elsewhere.
+    """
+    merged: dict[str, Any] = dict(base)
+    for key, value in update.items():
+        if (
+            key in merged
+            and isinstance(merged[key], dict)
+            and isinstance(value, dict)
+        ):
+            merged[key] = _deep_merge_dict(merged[key], value)
+        else:
+            merged[key] = value
+    return merged
+
+
 class CriteoFeaturePreprocessor:
     def __init__(self, config: dict[str, Any]) -> None:
         self.config = config
@@ -74,6 +92,11 @@ class CriteoFeaturePreprocessor:
             get_config_value(config, "encoding.integer.force_categorical_path", default=[])
         )
 
+        self.hybrid_sl_columns = set(
+            str(name)
+            for name in get_config_value(config, "model.integer.hybrid.sl_columns", default=[])
+        )
+
         self.categorical_encoders: dict[str, CategoricalOrdinalEncoder] = {}
         self.baseline_integer_encoders: dict[str, WinnerIntegerEncoder] = {}
         self.sl_integer_encoders: dict[str, SLIntegerEncoder] = {}
@@ -86,6 +109,7 @@ class CriteoFeaturePreprocessor:
 
     def fit(self, train_df: pd.DataFrame) -> "CriteoFeaturePreprocessor":
         self._validate_force_paths()
+        self._validate_hybrid_columns()
         self.integer_routing = self._compute_integer_routing(train_df)
 
         categorical_final = list(self.categorical_columns)
@@ -116,6 +140,13 @@ class CriteoFeaturePreprocessor:
             self.bspline_integer_encoders = self._fit_bspline_integer_encoders(
                 train_df, integer_final
             )
+        elif self.variant == "hybrid_bspline_sl":
+            sl_columns = [col for col in integer_final if col in self.hybrid_sl_columns]
+            bspline_columns = [col for col in integer_final if col not in self.hybrid_sl_columns]
+            self.sl_integer_encoders = self._fit_sl_integer_encoders(train_df, sl_columns)
+            self.bspline_integer_encoders = self._fit_bspline_integer_encoders(
+                train_df, bspline_columns
+            )
         else:
             raise ValueError(f"Unsupported variant: {self.variant!r}")
 
@@ -142,7 +173,7 @@ class CriteoFeaturePreprocessor:
                 )
                 continue
 
-            if self.variant == "baseline_winner":
+            if column in self.baseline_integer_encoders:
                 token_ids = self.baseline_integer_encoders[column].transform(df[column])
                 fields[column] = FieldArrayData(
                     token_ids=token_ids,
@@ -150,7 +181,7 @@ class CriteoFeaturePreprocessor:
                 )
                 continue
 
-            if self.variant == "sl_integer_basis":
+            if column in self.sl_integer_encoders:
                 token_ids, positive_mask, basis = self.sl_integer_encoders[column].transform(
                     df[column]
                 )
@@ -161,13 +192,19 @@ class CriteoFeaturePreprocessor:
                 )
                 continue
 
-            token_ids, positive_mask, scalar = self.bspline_integer_encoders[column].transform(
-                df[column]
-            )
-            fields[column] = FieldArrayData(
-                token_ids=token_ids,
-                positive_mask=positive_mask,
-                scalar=scalar,
+            if column in self.bspline_integer_encoders:
+                token_ids, positive_mask, scalar = self.bspline_integer_encoders[
+                    column
+                ].transform(df[column])
+                fields[column] = FieldArrayData(
+                    token_ids=token_ids,
+                    positive_mask=positive_mask,
+                    scalar=scalar,
+                )
+                continue
+
+            raise RuntimeError(
+                f"No fitted encoder found for column {column!r} (variant={self.variant!r})"
             )
 
         return EncodedSplit(labels=labels, fields=fields)
@@ -213,111 +250,79 @@ class CriteoFeaturePreprocessor:
     def _fit_sl_integer_encoders(
         self, train_df: pd.DataFrame, integer_columns: list[str]
     ) -> dict[str, SLIntegerEncoder]:
-        conductance_family = str(
-            get_config_value(
-                self.config,
-                "model.integer.sl.conductance.family",
-                default="curvature_spec",
-            )
-        )
-        sl_config = SLIntegerEncoderConfig(
-            cap_max=int(get_config_value(self.config, "model.integer.sl.cap_max", default=10_000_000)),
-            num_basis=int(get_config_value(self.config, "model.integer.sl.num_basis", default=16)),
-            prior_count=float(
-                get_config_value(self.config, "model.integer.sl.hist.prior_count", default=0.5)
-            ),
-            cutoff_quantile=float(
-                get_config_value(
-                    self.config, "model.integer.sl.hist.cutoff_quantile", default=0.99
-                )
-            ),
-            cutoff_factor=float(
-                get_config_value(
-                    self.config, "model.integer.sl.hist.cutoff_factor", default=1.1
-                )
-            ),
-            curvature_alpha=float(
-                get_config_value(self.config, "model.integer.sl.curvature.alpha", default=1.0)
-            ),
-            curvature_beta=float(
-                get_config_value(self.config, "model.integer.sl.curvature.beta", default=0.0)
-            ),
-            curvature_center=float(
-                get_config_value(self.config, "model.integer.sl.curvature.center", default=0.0)
-            ),
-            conductance_eps=float(
-                get_config_value(
-                    self.config, "model.integer.sl.conductance_eps", default=1e-8
-                )
-            ),
-            positive_overflow=str(
-                get_config_value(
-                    self.config,
-                    "model.integer.sl.positive_overflow",
-                    default="clip_to_cap",
-                )
-            ),
-            conductance_family=conductance_family,
-            uvalley_u0=float(
-                get_config_value(
-                    self.config,
-                    "model.integer.sl.conductance.u_exp_valley.u0",
-                    default=0.0,
-                )
-            ),
-            uvalley_left_slope=float(
-                get_config_value(
-                    self.config,
-                    "model.integer.sl.conductance.u_exp_valley.left_slope",
-                    default=1.0,
-                )
-            ),
-            uvalley_right_slope=float(
-                get_config_value(
-                    self.config,
-                    "model.integer.sl.conductance.u_exp_valley.right_slope",
-                    default=1.0,
-                )
-            ),
-            potential_family=str(
-                get_config_value(
-                    self.config,
-                    "model.integer.sl.potential.family",
-                    default="none",
-                )
-            ),
-            potential_kappa=float(
-                get_config_value(
-                    self.config,
-                    "model.integer.sl.potential.kappa",
-                    default=0.0,
-                )
-            ),
-            potential_x0=float(
-                get_config_value(
-                    self.config,
-                    "model.integer.sl.potential.x0",
-                    default=0.0,
-                )
-            ),
-            potential_eps=float(
-                get_config_value(
-                    self.config,
-                    "model.integer.sl.potential.eps",
-                    default=0.01,
-                )
-            ),
-            potential_power=float(
-                get_config_value(
-                    self.config,
-                    "model.integer.sl.potential.power",
-                    default=2.0,
-                )
-            ),
-        )
+        sl_cfg_raw = get_config_value(self.config, "model.integer.sl", default={})
+        if sl_cfg_raw is None:
+            sl_cfg_raw = {}
+        if not isinstance(sl_cfg_raw, dict):
+            raise ValueError("model.integer.sl must be a mapping")
+
+        per_column = get_config_value(self.config, "model.integer.sl.per_column", default={})
+        if per_column is None:
+            per_column = {}
+        if not isinstance(per_column, dict):
+            raise ValueError("model.integer.sl.per_column must be a mapping")
+
+        sl_base = dict(sl_cfg_raw)
+        sl_base.pop("per_column", None)
 
         encoders: dict[str, SLIntegerEncoder] = {}
         for column in integer_columns:
+            overrides = per_column.get(column, {})
+            if overrides is None:
+                overrides = {}
+            if not isinstance(overrides, dict):
+                raise ValueError(
+                    f"model.integer.sl.per_column.{column} must be a mapping, got {type(overrides)}"
+                )
+
+            sl_cfg = _deep_merge_dict(sl_base, overrides)
+            conductance_family = str(
+                get_config_value(
+                    sl_cfg,
+                    "conductance.family",
+                    default="curvature_spec",
+                )
+            )
+            sl_config = SLIntegerEncoderConfig(
+                cap_max=int(get_config_value(sl_cfg, "cap_max", default=10_000_000)),
+                num_basis=int(get_config_value(sl_cfg, "num_basis", default=16)),
+                prior_count=float(get_config_value(sl_cfg, "hist.prior_count", default=0.5)),
+                cutoff_quantile=float(
+                    get_config_value(sl_cfg, "hist.cutoff_quantile", default=0.99)
+                ),
+                cutoff_factor=float(get_config_value(sl_cfg, "hist.cutoff_factor", default=1.1)),
+                curvature_alpha=float(get_config_value(sl_cfg, "curvature.alpha", default=1.0)),
+                curvature_beta=float(get_config_value(sl_cfg, "curvature.beta", default=0.0)),
+                curvature_center=float(get_config_value(sl_cfg, "curvature.center", default=0.0)),
+                conductance_eps=float(get_config_value(sl_cfg, "conductance_eps", default=1e-8)),
+                positive_overflow=str(
+                    get_config_value(sl_cfg, "positive_overflow", default="clip_to_cap")
+                ),
+                cap_mode=str(get_config_value(sl_cfg, "cap_mode", default="auto")),
+                conductance_family=conductance_family,
+                uvalley_u0=float(
+                    get_config_value(sl_cfg, "conductance.u_exp_valley.u0", default=0.0)
+                ),
+                uvalley_left_slope=float(
+                    get_config_value(
+                        sl_cfg,
+                        "conductance.u_exp_valley.left_slope",
+                        default=1.0,
+                    )
+                ),
+                uvalley_right_slope=float(
+                    get_config_value(
+                        sl_cfg,
+                        "conductance.u_exp_valley.right_slope",
+                        default=1.0,
+                    )
+                ),
+                potential_family=str(get_config_value(sl_cfg, "potential.family", default="none")),
+                potential_kappa=float(get_config_value(sl_cfg, "potential.kappa", default=0.0)),
+                potential_x0=float(get_config_value(sl_cfg, "potential.x0", default=0.0)),
+                potential_eps=float(get_config_value(sl_cfg, "potential.eps", default=0.01)),
+                potential_power=float(get_config_value(sl_cfg, "potential.power", default=2.0)),
+            )
             encoder = SLIntegerEncoder(sl_config)
             encoder.fit(train_df[column])
             encoders[column] = encoder
@@ -427,20 +432,20 @@ class CriteoFeaturePreprocessor:
                 )
                 continue
 
-            if self.variant == "baseline_winner":
+            if column in self.baseline_integer_encoders:
                 specs.append(
                     FieldSpec(
                         name=column,
                         kind="discrete",
-                        discrete_cardinality=self.baseline_integer_encoders[
-                            column
-                        ].cardinality,
+                        discrete_cardinality=self.baseline_integer_encoders[column].cardinality,
                     )
                 )
                 continue
 
-            if self.variant == "sl_integer_basis":
-                encoder = self.sl_integer_encoders[column]
+            if column in self.sl_integer_encoders:
+                encoder = self.sl_integer_encoders.get(column)
+                if encoder is None:
+                    raise RuntimeError(f"Missing SL encoder for field {column!r}")
                 specs.append(
                     FieldSpec(
                         name=column,
@@ -451,7 +456,9 @@ class CriteoFeaturePreprocessor:
                 )
                 continue
 
-            encoder = self.bspline_integer_encoders[column]
+            encoder = self.bspline_integer_encoders.get(column)
+            if encoder is None:
+                raise RuntimeError(f"Missing BSpline encoder for field {column!r}")
             specs.append(
                 FieldSpec(
                     name=column,
@@ -510,6 +517,21 @@ class CriteoFeaturePreprocessor:
             raise ValueError(
                 "Fields cannot be forced to both integer and categorical paths: "
                 f"{overlap_list}"
+            )
+
+    def _validate_hybrid_columns(self) -> None:
+        if self.variant != "hybrid_bspline_sl":
+            return
+        if not self.hybrid_sl_columns:
+            raise ValueError(
+                "hybrid_bspline_sl requires at least one SL column in "
+                "`model.integer.hybrid.sl_columns`"
+            )
+        unknown = sorted(self.hybrid_sl_columns - set(self.integer_columns))
+        if unknown:
+            raise ValueError(
+                "hybrid_bspline_sl sl_columns must be integer columns; unknown: "
+                f"{unknown}"
             )
 
     def _require_fitted(self) -> None:

@@ -23,6 +23,7 @@ class SLIntegerEncoderConfig:
     curvature_center: float
     conductance_eps: float
     positive_overflow: str
+    cap_mode: str = "auto"
     conductance_family: str = "curvature_spec"
     uvalley_u0: float = 0.0
     uvalley_left_slope: float = 1.0
@@ -39,6 +40,7 @@ class SLIntegerEncoder:
         self.config = config
         self.missing_id = 0
         self.non_positive_to_id: dict[int, int] = {}
+        self.large_id: int | None = None
 
         self.cap_value: int = 1
         self.num_basis: int = max(1, int(config.num_basis))
@@ -47,7 +49,10 @@ class SLIntegerEncoder:
 
     @property
     def discrete_cardinality(self) -> int:
-        return 1 + len(self.non_positive_to_id)
+        cardinality = 1 + len(self.non_positive_to_id)
+        if self.config.positive_overflow == "large_token":
+            cardinality += 1
+        return cardinality
 
     def fit(self, series: pd.Series) -> "SLIntegerEncoder":
         ints = to_nullable_int(series)
@@ -57,6 +62,11 @@ class SLIntegerEncoder:
         self.non_positive_to_id = {
             value: index + 1 for index, value in enumerate(unique_non_positive)
         }
+        self.large_id = (
+            1 + len(self.non_positive_to_id)
+            if self.config.positive_overflow == "large_token"
+            else None
+        )
 
         positive = ints[(ints.notna()) & (ints > 0)].astype(int).to_numpy(dtype=np.int64)
         self.cap_value = self._fit_cap_value(positive)
@@ -64,8 +74,17 @@ class SLIntegerEncoder:
 
         counts = np.zeros(support_size, dtype=np.float64)
         if positive.size > 0:
-            clipped = np.clip(positive, 1, self.cap_value)
-            indices = clipped - 1
+            overflow_mode = str(self.config.positive_overflow or "clip_to_cap")
+            if overflow_mode == "clip_to_cap":
+                observed = np.clip(positive, 1, self.cap_value)
+            elif overflow_mode in {"missing", "large_token"}:
+                observed = positive[positive <= self.cap_value]
+            else:
+                raise ValueError(
+                    "Unsupported SL positive_overflow: "
+                    f"{overflow_mode!r} (expected 'clip_to_cap', 'missing', or 'large_token')"
+                )
+            indices = observed - 1
             bincounts = np.bincount(indices, minlength=support_size)
             counts[: len(bincounts)] = bincounts
 
@@ -116,12 +135,30 @@ class SLIntegerEncoder:
             positive_idx = np.flatnonzero(positive_candidate_mask)
             positive_values = ints.iloc[positive_idx].astype(int).to_numpy()
 
-            if self.config.positive_overflow == "missing":
+            overflow_mode = str(self.config.positive_overflow or "clip_to_cap")
+            if overflow_mode == "missing":
                 valid_positive = positive_values <= self.cap_value
                 positive_idx = positive_idx[valid_positive]
                 positive_values = positive_values[valid_positive]
                 if positive_values.size == 0:
                     return token_ids, positive_mask, basis
+            elif overflow_mode == "large_token":
+                if self.large_id is None:
+                    raise RuntimeError("large_id is not set; did you call fit()?")
+                overflow = positive_values > self.cap_value
+                if np.any(overflow):
+                    overflow_idx = positive_idx[overflow]
+                    token_ids[overflow_idx] = int(self.large_id)
+                in_range = ~overflow
+                positive_idx = positive_idx[in_range]
+                positive_values = positive_values[in_range]
+                if positive_values.size == 0:
+                    return token_ids, positive_mask, basis
+            elif overflow_mode != "clip_to_cap":
+                raise ValueError(
+                    "Unsupported SL positive_overflow: "
+                    f"{overflow_mode!r} (expected 'clip_to_cap', 'missing', or 'large_token')"
+                )
 
             clipped = np.clip(positive_values, 1, self.cap_value)
             basis_indices = clipped - 1
@@ -247,12 +284,28 @@ class SLIntegerEncoder:
             return 1
 
         observed_max = int(np.max(positive_values))
-        if observed_max <= self.config.cap_max:
-            return max(observed_max, 1)
+        mode = str(self.config.cap_mode or "auto")
 
-        quantile_val = float(np.quantile(positive_values, self.config.cutoff_quantile))
-        cutoff = int(min(quantile_val * self.config.cutoff_factor, self.config.cap_max))
-        return max(cutoff, 1)
+        if mode in {"auto", "max_or_quantile_if_exceeds_cap_max"}:
+            if observed_max <= self.config.cap_max:
+                return max(observed_max, 1)
+            quantile_val = float(np.quantile(positive_values, self.config.cutoff_quantile))
+            cutoff = int(
+                min(quantile_val * self.config.cutoff_factor, self.config.cap_max)
+            )
+            return max(cutoff, 1)
+
+        if mode == "max":
+            return max(min(observed_max, self.config.cap_max), 1)
+
+        if mode == "quantile":
+            quantile_val = float(np.quantile(positive_values, self.config.cutoff_quantile))
+            cutoff = int(
+                min(quantile_val * self.config.cutoff_factor, self.config.cap_max)
+            )
+            return max(cutoff, 1)
+
+        raise ValueError(f"Unsupported SL cap_mode: {mode!r}")
 
     def _require_fitted(self) -> None:
         if not self._fitted:

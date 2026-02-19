@@ -1,0 +1,28 @@
+experiment:
+  name: criteo_fwfm_hybrid_bspline_sl_i5_i11
+  variant: hybrid_bspline_sl
+
+model:
+  integer:
+    hybrid:
+      # Columns that use SL (all other integer columns use B-splines).
+      sl_columns: [I5, I11]
+    sl:
+      # Per-column overrides allow fixing one column's SL parameters while tuning the
+      # global SL parameters (which apply to all SL columns without overrides).
+      per_column:
+        I11:
+          conductance:
+            family: u_exp_valley
+            u_exp_valley:
+              # Fixed to the best I11-only hybrid SL params (trial 78) from:
+              # journal/2026-02-17_hybrid_bspline_sl_i11_optuna_u_exp_valley_potential_barrier_400k_100t/results.json
+              u0: 0.5641659424306465
+              left_slope: 0.6518595975615621
+              right_slope: 0.5755890874474235
+          potential:
+            family: u_right_inverse_square
+            kappa: 0.47349290941720057
+            eps: 0.10380685981957297
+            x0: 0.0
+

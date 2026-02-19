@@ -1,0 +1,25 @@
+{
+  "study_name": "hybrid_bspline_sl_i5_tune_i11_fixed_barrier_400k",
+  "storage_url": "sqlite:///journal/2026-02-18_hybrid_bspline_sl_i5_tune_i11_fixed_barrier_400k_100t/study.sqlite3",
+  "target_trials": 100,
+  "completed_trials": 100,
+  "failed_trials": 0,
+  "running_trials": 0,
+  "total_trials_seen": 100,
+  "hpo_seconds": 27320.461192443036,
+  "timestamp": 1771421299.992237,
+  "best_trial": 90,
+  "best_trial_val_logloss": 0.4718875464682844,
+  "best_params": {
+    "lr": 0.0018982018326131338,
+    "weight_decay": 5.915858749259879e-08,
+    "sl_u0": 0.5990455762768341,
+    "sl_left_slope": 1.615133259988079,
+    "sl_right_slope": 0.929030675802002,
+    "sl_potential_kappa": 0.4496834270130303,
+    "sl_potential_eps": 0.02770244434064551
+  },
+  "final_val_logloss": 0.4718875464682844,
+  "final_test_logloss": 0.4668398528148151,
+  "interaction_matrix_path": "journal/2026-02-18_hybrid_bspline_sl_i5_tune_i11_fixed_barrier_400k_100t/interaction_matrix.npz"
+}

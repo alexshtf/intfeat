@@ -6,7 +6,9 @@ This experiment **did not** beat B-splines on validation for the 400k/400k/400k 
 
 Reference (from `journal/2026-02-10_criteo_optuna_contiguous_400k_100t/proceedings.md`):
 
-- `bspline_integer_basis` best-trial val logloss: `0.47180640675774904` (Optuna stopped at 72/100 trials; no test eval recorded)
+- `bspline_integer_basis` best-trial val logloss: `0.47180640675774904` (Optuna stopped at 72/100 trials)
+  - Refit best B-spline config (trial 37 hyperparameters; seed=42): test logloss `0.46680837257297464`
+    (see `journal/2026-02-10_criteo_optuna_contiguous_400k_100t/bspline_refit_best_trial37.json`)
 
 This run (confine potential `V(u)=kappa*u^p`, tuning conductance + potential + optimizer):
 

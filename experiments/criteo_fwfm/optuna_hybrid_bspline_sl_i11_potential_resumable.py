@@ -24,9 +24,13 @@ from .train import encoded_split_to_torch, evaluate_split, set_global_seed, trai
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Resumable Optuna tuning for SL-FwFM with per-trial basis recomputation. "
-            "Tunes lr, weight_decay, u_exp_valley conductance (u0, left_slope, right_slope), "
-            "and a right-tail-decay diagonal potential in normalized log-space u."
+            "Resumable Optuna tuning for a hybrid Criteo FwFM model: "
+            "B-splines for integer columns by default, and SL basis for a subset of integer "
+            "columns defined in the hybrid config's `model.integer.hybrid.sl_columns`. "
+            "Tunes lr, weight_decay, SL conductance (u0, left_slope, right_slope), "
+            "and an SL diagonal potential in normalized log-space u. "
+            "Per-column overrides can be specified via `model.integer.sl.per_column` to "
+            "freeze some SL columns while tuning the global SL parameters."
         )
     )
     parser.add_argument(
@@ -50,31 +54,49 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--num-epochs", type=int, default=1)
     parser.add_argument("--batch-size", type=int, default=256)
     parser.add_argument("--embedding-dim", type=int, default=8)
-    parser.add_argument("--sl-num-basis", type=int, default=10)
-    parser.add_argument("--sl-cap-max", type=int, default=10_000_000)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--output-json", type=Path, required=True)
     parser.add_argument(
         "--checkpoint-json",
         type=Path,
-        default=Path("artifacts/criteo_fwfm/sl_optuna_u_exp_valley_potential.checkpoint.json"),
+        default=Path(
+            "artifacts/criteo_fwfm/hybrid_bspline_sl_i11_optuna_u_exp_valley_potential.checkpoint.json"
+        ),
     )
     parser.add_argument(
         "--study-name",
         type=str,
-        default="sl_optuna_u_exp_valley_potential",
+        default="hybrid_bspline_sl_i11_optuna_u_exp_valley_potential",
     )
     parser.add_argument(
         "--storage-url",
         type=str,
-        default="sqlite:///artifacts/criteo_fwfm/sl_optuna_u_exp_valley_potential.sqlite3",
+        default="sqlite:///artifacts/criteo_fwfm/hybrid_bspline_sl_i11_optuna_u_exp_valley_potential.sqlite3",
     )
+    parser.add_argument(
+        "--hybrid-config",
+        type=Path,
+        default=Path("experiments/criteo_fwfm/config/model_hybrid_bspline_sl_i11.yaml"),
+        help=(
+            "YAML config to enable hybrid mode and select which integer columns use SL "
+            "(via model.integer.hybrid.sl_columns)."
+        ),
+    )
+
+    # B-spline config (fixed; not tuned here).
+    parser.add_argument("--bspline-knots", type=int, default=10)
+
+    # SL config (I11 only).
+    parser.add_argument("--sl-num-basis", type=int, default=10)
+    parser.add_argument("--sl-cap-max", type=int, default=10_000_000)
+
+    # Optimizer search space.
     parser.add_argument("--lr-min", type=float, default=1e-4)
     parser.add_argument("--lr-max", type=float, default=1e-2)
     parser.add_argument("--wd-min", type=float, default=1e-8)
     parser.add_argument("--wd-max", type=float, default=1e-2)
 
-    # Conductance search space.
+    # Conductance search space (u_exp_valley).
     parser.add_argument("--u0-min", type=float, default=0.0)
     parser.add_argument("--u0-max", type=float, default=1.0)
     parser.add_argument("--left-slope-min", type=float, default=0.1)
@@ -86,7 +108,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--potential-family",
         type=str,
-        default="u_power",
+        default="u_right_inverse_square",
         choices=["u_power", "u_right_inverse_square"],
         help=(
             "Diagonal potential family in normalized u=log1p(x)/log1p(cap). "
@@ -137,13 +159,14 @@ def read_rows(path: Path, start_row: int, n_rows: int) -> pd.DataFrame:
 
 def make_base_config(args: argparse.Namespace) -> dict[str, Any]:
     default_cfg = Path("experiments/criteo_fwfm/config/default.yaml")
-    sl_cfg = Path("experiments/criteo_fwfm/config/model_sl.yaml")
-    config = resolve_config(default_cfg, [sl_cfg], [])
+    config = resolve_config(default_cfg, [Path(args.hybrid_config)], [])
 
     config["experiment"]["seed"] = int(args.seed)
     config["data"]["path"] = str(args.data_path)
 
     config["model"]["embedding_dim"] = int(args.embedding_dim)
+    config["model"]["integer"]["bspline"]["knots_config"] = int(args.bspline_knots)
+
     config["model"]["integer"]["sl"]["num_basis"] = int(args.sl_num_basis)
     config["model"]["integer"]["sl"]["cap_max"] = int(args.sl_cap_max)
 
@@ -260,13 +283,9 @@ def _ensure_sqlite_parent(storage_url: str) -> None:
 
 def main() -> None:
     args = parse_args()
+    _ensure_sqlite_parent(args.storage_url)
 
     potential_family = str(args.potential_family)
-    if float(args.kappa_min) <= 0 or float(args.kappa_max) <= 0:
-        raise ValueError("kappa range must be positive")
-    if float(args.eps_min) <= 0 or float(args.eps_max) <= 0:
-        raise ValueError("eps range must be positive")
-
     split_rows = int(args.split_rows)
     train_start = 0
     val_start = split_rows
@@ -277,27 +296,30 @@ def main() -> None:
     test_df = read_rows(args.data_path, test_start, split_rows)
 
     base_config = make_base_config(args)
-    device = torch.device("cpu")
-
-    _ensure_sqlite_parent(str(args.storage_url))
 
     sampler = optuna.samplers.TPESampler(seed=int(args.seed))
     study = optuna.create_study(
         direction="minimize",
         sampler=sampler,
-        study_name=args.study_name,
-        storage=args.storage_url,
+        study_name=str(args.study_name),
+        storage=str(args.storage_url),
         load_if_exists=True,
     )
 
     completed_before = _completed_count(study)
-    remaining = max(int(args.trials) - completed_before, 0)
+    target = int(args.trials)
+    remaining = max(0, target - completed_before)
     if int(args.max_new_trials) > 0:
         remaining = min(remaining, int(args.max_new_trials))
 
+    device = torch.device("cpu")
     print(
-        f"Study '{args.study_name}': completed_before={completed_before}, "
-        f"target={args.trials}, running_now={remaining}",
+        "Hybrid Optuna:",
+        f"variant={base_config['experiment']['variant']}",
+        f"hybrid_config={args.hybrid_config}",
+        f"hybrid_sl_columns={base_config['model']['integer']['hybrid']['sl_columns']}",
+        f"potential_family={potential_family}",
+        f"completed_before={completed_before} target={target} remaining={remaining}",
         flush=True,
     )
 
@@ -455,7 +477,7 @@ def main() -> None:
     save_interaction_matrix_npz(model=final_model, out_path=interaction_matrix_path)
 
     print(
-        "RESULT sl_integer_basis",
+        "RESULT hybrid_bspline_sl",
         f"potential_family={potential_family}",
         "best_trial_val_logloss=",
         f"{study.best_trial.value:.6f}",
@@ -480,7 +502,11 @@ def main() -> None:
         search_space["sl_potential_eps"] = [float(args.eps_min), float(args.eps_max)]
 
     payload = {
-        "variant": "sl_integer_basis",
+        "variant": "hybrid_bspline_sl",
+        "hybrid_config": str(args.hybrid_config),
+        "hybrid_sl_columns": list(final_config["model"]["integer"]["hybrid"]["sl_columns"]),
+        "sl_per_column_overrides": final_config["model"]["integer"]["sl"].get("per_column", {}),
+        "bspline_knots": int(args.bspline_knots),
         "sl_conductance_family": "u_exp_valley",
         "sl_potential_family": potential_family,
         "data_path": str(args.data_path),

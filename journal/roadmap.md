@@ -48,9 +48,11 @@
      - Confine potential (do this first): work in normalized log-coordinates `u = log1p(x)/log1p(cap) in [0, 1]` and use a monotone confining family
        `V(u) = kappa * u^p` with `kappa > 0`, `p >= 1`.
        Tune: `kappa`, `p`, and conductance hyperparameters jointly (plus training hyperparameters like `lr/wd`).
+       Status: **done** (2026-02-15) on 400k split; best val `0.4725398508`, test `0.4676545386` (did not beat B-spline). See `journal/2026-02-15_sl_optuna_u_exp_valley_potential_confine_400k_100t/results.json`.
      - Right-barrier potential (do this second): also in `u`, use a right-end barrier
        `V(u) = kappa / (1 - u + eps)^2` with `kappa > 0`, `eps > 0`.
        Tune: `kappa`, `eps`, and conductance hyperparameters jointly (plus `lr/wd`).
+       Status: **done** (2026-02-15) on 400k split; best val `0.4723620801`, test `0.4668095594` (did not beat B-spline). See `journal/2026-02-15_sl_optuna_u_exp_valley_potential_barrier_400k_100t/results.json`.
    - Success criterion: SL beats B-spline on the 400k contiguous split by a meaningful margin, then confirm on 1M/200k/200k.
 3. Add conductance families that can represent heavy-tail + local ROI
    - Monotone heavy-tail: `c(x) = eps + ((x + x_shift) / x_scale)^p` (p>0).

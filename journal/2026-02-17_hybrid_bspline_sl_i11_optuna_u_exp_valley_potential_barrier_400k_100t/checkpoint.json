@@ -1,0 +1,24 @@
+{
+  "study_name": "hybrid_bspline_sl_i11_potential_barrier_400k",
+  "storage_url": "sqlite:///journal/2026-02-17_hybrid_bspline_sl_i11_optuna_u_exp_valley_potential_barrier_400k_100t/study.sqlite3",
+  "target_trials": 100,
+  "completed_trials": 100,
+  "failed_trials": 0,
+  "running_trials": 0,
+  "total_trials_seen": 100,
+  "hpo_seconds": 23581.53325493203,
+  "timestamp": 1771380449.8571393,
+  "best_trial": 78,
+  "best_trial_val_logloss": 0.47177167979007906,
+  "best_params": {
+    "lr": 0.0021449981209467326,
+    "weight_decay": 1.0897802505961267e-07,
+    "sl_u0": 0.5641659424306465,
+    "sl_left_slope": 0.6518595975615621,
+    "sl_right_slope": 0.5755890874474235,
+    "sl_potential_kappa": 0.47349290941720057,
+    "sl_potential_eps": 0.10380685981957297
+  },
+  "final_val_logloss": 0.47177167979007906,
+  "final_test_logloss": 0.4668762496723887
+}

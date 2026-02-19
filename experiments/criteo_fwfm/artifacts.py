@@ -9,6 +9,7 @@ import pandas as pd
 import torch
 
 from .config import save_yaml
+from .interactions import save_interaction_matrix_npz
 
 
 def build_run_dir(config: dict[str, Any]) -> Path:
@@ -63,6 +64,11 @@ def save_predictions(
 
 def save_model(model: torch.nn.Module, run_dir: Path) -> None:
     torch.save(model.state_dict(), run_dir / "model.pt")
+
+
+def save_interaction_matrix(model: torch.nn.Module, run_dir: Path) -> None:
+    """Save the effective FwFM field interaction matrix R (symmetric, zero diagonal)."""
+    save_interaction_matrix_npz(model=model, out_path=run_dir / "interaction_matrix.npz")
 
 
 def save_resolved_config(config: dict[str, Any], run_dir: Path) -> None:
