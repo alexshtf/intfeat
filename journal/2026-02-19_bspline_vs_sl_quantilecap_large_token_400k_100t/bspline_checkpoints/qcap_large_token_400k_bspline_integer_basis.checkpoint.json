@@ -1,0 +1,18 @@
+{
+  "variant": "bspline_integer_basis",
+  "study_name": "qcap_large_token_400k_bspline_integer_basis",
+  "storage_url": "sqlite:///journal/2026-02-19_bspline_vs_sl_quantilecap_large_token_400k_100t/bspline_study.sqlite3",
+  "target_trials": 100,
+  "completed_trials": 100,
+  "failed_trials": 0,
+  "running_trials": 0,
+  "total_trials_seen": 100,
+  "hpo_seconds": 30590.568532441976,
+  "timestamp": 1771524388.509349,
+  "best_trial": 63,
+  "best_trial_val_logloss": 0.47310167772615197,
+  "best_params": {
+    "lr": 0.001417324920318447,
+    "weight_decay": 5.297945691114149e-07
+  }
+}

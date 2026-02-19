@@ -1,0 +1,25 @@
+{
+  "study_name": "sl_qcap_large_token_u_exp_valley_u_power_400k_100t",
+  "storage_url": "sqlite:///journal/2026-02-19_bspline_vs_sl_quantilecap_large_token_400k_100t/sl_study.sqlite3",
+  "target_trials": 100,
+  "completed_trials": 100,
+  "failed_trials": 0,
+  "running_trials": 0,
+  "total_trials_seen": 100,
+  "hpo_seconds": 13979.930108368979,
+  "timestamp": 1771507939.1274095,
+  "best_trial": 94,
+  "best_trial_val_logloss": 0.47236197516394707,
+  "best_params": {
+    "lr": 0.0014577309788313892,
+    "weight_decay": 4.0241732267213483e-07,
+    "sl_u0": 0.15690082766987387,
+    "sl_left_slope": 3.271669161177461,
+    "sl_right_slope": 0.7487886974656032,
+    "sl_potential_kappa": 2.9335554095906717,
+    "sl_potential_power": 5.8467512273292295
+  },
+  "final_val_logloss": 0.47236197516394707,
+  "final_test_logloss": 0.4668877449921019,
+  "interaction_matrix_path": "journal/2026-02-19_bspline_vs_sl_quantilecap_large_token_400k_100t/interaction_matrix.npz"
+}

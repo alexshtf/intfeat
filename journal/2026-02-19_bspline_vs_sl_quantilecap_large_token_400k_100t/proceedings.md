@@ -85,3 +85,8 @@ setsid -f bash -lc '
     --output-json journal/2026-02-19_bspline_vs_sl_quantilecap_large_token_400k_100t/sl_results.json
 ' </dev/null > journal/2026-02-19_bspline_vs_sl_quantilecap_large_token_400k_100t/sl_run.log 2>&1
 ```
+
+## Final Status
+
+- SL finished: see `journal/2026-02-19_bspline_vs_sl_quantilecap_large_token_400k_100t/sl_results.json`
+- B-spline finished: see `journal/2026-02-19_bspline_vs_sl_quantilecap_large_token_400k_100t/bspline_results.json`
