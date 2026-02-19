@@ -2,7 +2,7 @@
 
 Code version:
 
-- git rev: `515d7ddca28d5fe19223b5c1cf71be6851e2ef74`
+- git rev: `feee47e52301fb1395c227b9495c9d8f627f4429`
 
 ## Commands
 
@@ -85,4 +85,3 @@ setsid -f bash -lc '
     --output-json journal/2026-02-19_bspline_vs_sl_quantilecap_large_token_400k_100t/sl_results.json
 ' </dev/null > journal/2026-02-19_bspline_vs_sl_quantilecap_large_token_400k_100t/sl_run.log 2>&1
 ```
-
