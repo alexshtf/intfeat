@@ -30,6 +30,12 @@ def parse_args() -> argparse.Namespace:
         )
     )
     parser.add_argument(
+        "--sl-config",
+        type=Path,
+        default=Path("experiments/criteo_fwfm/config/model_sl.yaml"),
+        help="YAML config used as the base for the SL variant.",
+    )
+    parser.add_argument(
         "--data-path",
         type=Path,
         default=Path("/home/alex/datasets/criteo_kaggle_challenge/train.txt"),
@@ -52,6 +58,42 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--embedding-dim", type=int, default=8)
     parser.add_argument("--sl-num-basis", type=int, default=10)
     parser.add_argument("--sl-cap-max", type=int, default=10_000_000)
+    parser.add_argument(
+        "--sl-cap-mode",
+        type=str,
+        default="auto",
+        choices=["auto", "max", "quantile"],
+        help=(
+            "How to choose per-column support size cap_value for SL. "
+            "auto: observed_max if <=cap_max else quantile; "
+            "max: min(observed_max, cap_max); "
+            "quantile: quantile*factor (clipped by cap_max)."
+        ),
+    )
+    parser.add_argument(
+        "--sl-cutoff-quantile",
+        type=float,
+        default=0.99,
+        help="Quantile used when sl-cap-mode=quantile (or auto and max>cap_max).",
+    )
+    parser.add_argument(
+        "--sl-cutoff-factor",
+        type=float,
+        default=1.1,
+        help="Factor multiplied into the quantile when sl-cap-mode=quantile (or auto).",
+    )
+    parser.add_argument(
+        "--sl-positive-overflow",
+        type=str,
+        default="clip_to_cap",
+        choices=["clip_to_cap", "missing", "large_token"],
+        help=(
+            "How to handle positive values above cap_value. "
+            "clip_to_cap: use basis at cap_value; "
+            "missing: drop to missing_id; "
+            "large_token: map to a per-column LARGE discrete token (no basis)."
+        ),
+    )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--output-json", type=Path, required=True)
     parser.add_argument(
@@ -137,15 +179,23 @@ def read_rows(path: Path, start_row: int, n_rows: int) -> pd.DataFrame:
 
 def make_base_config(args: argparse.Namespace) -> dict[str, Any]:
     default_cfg = Path("experiments/criteo_fwfm/config/default.yaml")
-    sl_cfg = Path("experiments/criteo_fwfm/config/model_sl.yaml")
-    config = resolve_config(default_cfg, [sl_cfg], [])
+    config = resolve_config(default_cfg, [Path(args.sl_config)], [])
 
     config["experiment"]["seed"] = int(args.seed)
     config["data"]["path"] = str(args.data_path)
 
     config["model"]["embedding_dim"] = int(args.embedding_dim)
-    config["model"]["integer"]["sl"]["num_basis"] = int(args.sl_num_basis)
-    config["model"]["integer"]["sl"]["cap_max"] = int(args.sl_cap_max)
+    sl_cfg = config.setdefault("model", {}).setdefault("integer", {}).setdefault("sl", {})
+    sl_cfg["num_basis"] = int(args.sl_num_basis)
+    sl_cfg["cap_max"] = int(args.sl_cap_max)
+    sl_cfg["cap_mode"] = str(args.sl_cap_mode)
+    sl_cfg["positive_overflow"] = str(args.sl_positive_overflow)
+    hist_cfg = sl_cfg.get("hist")
+    if hist_cfg is None or not isinstance(hist_cfg, dict):
+        hist_cfg = {}
+        sl_cfg["hist"] = hist_cfg
+    hist_cfg["cutoff_quantile"] = float(args.sl_cutoff_quantile)
+    hist_cfg["cutoff_factor"] = float(args.sl_cutoff_factor)
 
     config["train"]["batch_size"] = int(args.batch_size)
     config["train"]["num_epochs"] = int(args.num_epochs)
@@ -483,6 +533,7 @@ def main() -> None:
         "variant": "sl_integer_basis",
         "sl_conductance_family": "u_exp_valley",
         "sl_potential_family": potential_family,
+        "sl_config": str(args.sl_config),
         "data_path": str(args.data_path),
         "split_rows": split_rows,
         "train_range": [train_start, train_start + split_rows],
@@ -496,6 +547,10 @@ def main() -> None:
         "embedding_dim": int(args.embedding_dim),
         "sl_num_basis": int(args.sl_num_basis),
         "sl_cap_max": int(args.sl_cap_max),
+        "sl_cap_mode": str(args.sl_cap_mode),
+        "sl_cutoff_quantile": float(args.sl_cutoff_quantile),
+        "sl_cutoff_factor": float(args.sl_cutoff_factor),
+        "sl_positive_overflow": str(args.sl_positive_overflow),
         "search_space": search_space,
         "study_name": args.study_name,
         "storage_url": args.storage_url,

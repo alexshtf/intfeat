@@ -1,0 +1,16 @@
+experiment:
+  name: criteo_fwfm_sl_quantilecap_large_token
+  variant: sl_integer_basis
+
+model:
+  integer:
+    sl:
+      # SL basis is only used for x in [1, cap_value]. Non-positives are discrete.
+      cap_max: 10000000
+      cap_mode: quantile
+      positive_overflow: large_token
+
+      # Parameters used when cap_mode=quantile.
+      hist:
+        cutoff_quantile: 0.99
+        cutoff_factor: 1.1

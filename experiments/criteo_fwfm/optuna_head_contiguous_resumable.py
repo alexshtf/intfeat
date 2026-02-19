@@ -96,6 +96,24 @@ def parse_args() -> argparse.Namespace:
         default="baseline_winner,bspline_integer_basis,sl_integer_basis",
         help="Comma-separated variants to run.",
     )
+    parser.add_argument(
+        "--baseline-config",
+        type=Path,
+        default=Path("experiments/criteo_fwfm/config/model_baseline.yaml"),
+        help="YAML config for baseline_winner variant.",
+    )
+    parser.add_argument(
+        "--bspline-config",
+        type=Path,
+        default=Path("experiments/criteo_fwfm/config/model_bspline.yaml"),
+        help="YAML config for bspline_integer_basis variant.",
+    )
+    parser.add_argument(
+        "--sl-config",
+        type=Path,
+        default=Path("experiments/criteo_fwfm/config/model_sl.yaml"),
+        help="YAML config for sl_integer_basis variant.",
+    )
 
     parser.add_argument(
         "--tune-train-rows",
@@ -485,9 +503,9 @@ def main() -> None:
         raise ValueError("train_rows, val_rows, and test_rows must all be > 0")
 
     variant_configs = {
-        "baseline_winner": Path("experiments/criteo_fwfm/config/model_baseline.yaml"),
-        "sl_integer_basis": Path("experiments/criteo_fwfm/config/model_sl.yaml"),
-        "bspline_integer_basis": Path("experiments/criteo_fwfm/config/model_bspline.yaml"),
+        "baseline_winner": Path(args.baseline_config),
+        "sl_integer_basis": Path(args.sl_config),
+        "bspline_integer_basis": Path(args.bspline_config),
     }
 
     requested = [item.strip() for item in args.variants.split(",") if item.strip()]
@@ -537,4 +555,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
