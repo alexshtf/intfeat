@@ -28,7 +28,7 @@ def parse_args() -> argparse.Namespace:
             "B-splines for integer columns by default, and SL basis for a subset of integer "
             "columns defined in the hybrid config's `model.integer.hybrid.sl_columns`. "
             "Tunes lr, weight_decay, SL conductance (u0, left_slope, right_slope), "
-            "and an SL diagonal potential in normalized log-space u. "
+            "and an SL diagonal potential (in either x-space or normalized log-space u). "
             "Per-column overrides can be specified via `model.integer.sl.per_column` to "
             "freeze some SL columns while tuning the global SL parameters."
         )
@@ -109,11 +109,12 @@ def parse_args() -> argparse.Namespace:
         "--potential-family",
         type=str,
         default="u_right_inverse_square",
-        choices=["u_power", "u_right_inverse_square"],
+        choices=["u_power", "u_right_inverse_square", "inverse_square"],
         help=(
-            "Diagonal potential family in normalized u=log1p(x)/log1p(cap). "
-            "u_power: V(u)=kappa*u^p (confining to the left). "
-            "u_right_inverse_square: V(u)=kappa/(1-u+eps)^2 (right-end barrier)."
+            "Diagonal potential family (effective V := q/w in the symmetric eigenproblem). "
+            "u_power: V(u)=kappa*u^p, where u=log1p(x-1)/log1p(cap-1). "
+            "u_right_inverse_square: V(u)=kappa/(1-u+eps)^2 (right-end barrier, in u). "
+            "inverse_square: V(x)=kappa/(x+x0)^2, where x is the positive integer value."
         ),
     )
     parser.add_argument("--kappa-min", type=float, default=0.05)
@@ -122,6 +123,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--power-max", type=float, default=6.0)
     parser.add_argument("--eps-min", type=float, default=1e-3)
     parser.add_argument("--eps-max", type=float, default=0.2)
+    parser.add_argument("--x0-min", type=float, default=1e-3)
+    parser.add_argument("--x0-max", type=float, default=1e3)
 
     return parser.parse_args()
 
@@ -206,11 +209,14 @@ def apply_trial_params(
 
     potential_cfg["family"] = str(potential_family)
     potential_cfg["kappa"] = float(params["sl_potential_kappa"])
-    potential_cfg["x0"] = 0.0
     if potential_family == "u_power":
+        potential_cfg["x0"] = 0.0
         potential_cfg["power"] = float(params["sl_potential_power"])
     elif potential_family == "u_right_inverse_square":
+        potential_cfg["x0"] = 0.0
         potential_cfg["eps"] = float(params["sl_potential_eps"])
+    elif potential_family == "inverse_square":
+        potential_cfg["x0"] = float(params["sl_potential_x0"])
     else:
         raise ValueError(f"Unknown potential family: {potential_family!r}")
 
@@ -344,10 +350,16 @@ def main() -> None:
             trial_params["sl_potential_power"] = trial.suggest_float(
                 "sl_potential_power", args.power_min, args.power_max
             )
-        else:
+        elif potential_family == "u_right_inverse_square":
             trial_params["sl_potential_eps"] = trial.suggest_float(
                 "sl_potential_eps", args.eps_min, args.eps_max, log=True
             )
+        elif potential_family == "inverse_square":
+            trial_params["sl_potential_x0"] = trial.suggest_float(
+                "sl_potential_x0", args.x0_min, args.x0_max, log=True
+            )
+        else:
+            raise ValueError(f"Unknown potential family: {potential_family!r}")
 
         trial_config = copy.deepcopy(base_config)
         apply_trial_params(trial_config, params=trial_params, potential_family=potential_family)
@@ -434,8 +446,12 @@ def main() -> None:
     }
     if potential_family == "u_power":
         best_params["sl_potential_power"] = float(study.best_trial.params["sl_potential_power"])
-    else:
+    elif potential_family == "u_right_inverse_square":
         best_params["sl_potential_eps"] = float(study.best_trial.params["sl_potential_eps"])
+    elif potential_family == "inverse_square":
+        best_params["sl_potential_x0"] = float(study.best_trial.params["sl_potential_x0"])
+    else:
+        raise ValueError(f"Unknown potential family: {potential_family!r}")
 
     final_config = copy.deepcopy(base_config)
     apply_trial_params(final_config, params=best_params, potential_family=potential_family)
@@ -498,8 +514,12 @@ def main() -> None:
     }
     if potential_family == "u_power":
         search_space["sl_potential_power"] = [float(args.power_min), float(args.power_max)]
-    else:
+    elif potential_family == "u_right_inverse_square":
         search_space["sl_potential_eps"] = [float(args.eps_min), float(args.eps_max)]
+    elif potential_family == "inverse_square":
+        search_space["sl_potential_x0"] = [float(args.x0_min), float(args.x0_max)]
+    else:
+        raise ValueError(f"Unknown potential family: {potential_family!r}")
 
     payload = {
         "variant": "hybrid_bspline_sl",
