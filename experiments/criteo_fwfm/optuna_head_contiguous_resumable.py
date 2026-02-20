@@ -4,6 +4,9 @@ import argparse
 import copy
 import gc
 import json
+import os
+import shlex
+import sys
 import time
 from pathlib import Path
 from typing import Any
@@ -115,6 +118,14 @@ def parse_args() -> argparse.Namespace:
         default=Path("experiments/criteo_fwfm/config/model_sl.yaml"),
         help="YAML config for sl_integer_basis variant.",
     )
+    parser.add_argument(
+        "--hybrid-config",
+        type=Path,
+        default=Path(
+            "experiments/criteo_fwfm/config/model_hybrid_bspline_sl_i5_quantile_large_token.yaml"
+        ),
+        help="YAML config for hybrid_bspline_sl variant.",
+    )
 
     parser.add_argument(
         "--tune-train-rows",
@@ -207,8 +218,11 @@ def make_base_config(
                 "right_slope"
             ] = float(args.sl_right_slope)
 
-    if variant == "bspline_integer_basis":
+    if variant in {"bspline_integer_basis", "hybrid_bspline_sl"}:
         config["model"]["integer"]["bspline"]["knots_config"] = int(args.bspline_knots)
+
+    if variant == "hybrid_bspline_sl":
+        config["model"]["integer"]["sl"]["num_basis"] = int(args.sl_num_basis)
 
     return config
 
@@ -501,6 +515,16 @@ def run_variant(
 def main() -> None:
     args = parse_args()
 
+    # Persist basic runtime metadata for detached/resumable runs.
+    args.output_json.parent.mkdir(parents=True, exist_ok=True)
+    (args.output_json.parent / "pid.txt").write_text(
+        f"{os.getpid()}\n", encoding="utf-8"
+    )
+    (args.output_json.parent / "cmd.txt").write_text(
+        " ".join(shlex.quote(arg) for arg in sys.argv) + "\n",
+        encoding="utf-8",
+    )
+
     train_rows = int(args.train_rows)
     val_rows = int(args.val_rows)
     test_rows = int(args.test_rows)
@@ -511,6 +535,7 @@ def main() -> None:
         "baseline_winner": Path(args.baseline_config),
         "sl_integer_basis": Path(args.sl_config),
         "bspline_integer_basis": Path(args.bspline_config),
+        "hybrid_bspline_sl": Path(args.hybrid_config),
     }
 
     requested = [item.strip() for item in args.variants.split(",") if item.strip()]
@@ -553,7 +578,6 @@ def main() -> None:
         "results": all_results,
     }
 
-    args.output_json.parent.mkdir(parents=True, exist_ok=True)
     args.output_json.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     print(f"\nWrote summary: {args.output_json}")
 

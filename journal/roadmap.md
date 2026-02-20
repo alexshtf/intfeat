@@ -27,6 +27,7 @@
   - Larger (verification only): 1M train, 200k val, 200k test.
   - The larger schedule is only used once SL is beating splines on the small schedule (to verify the finding).
   - Exception: we may run the larger schedule for explicitly-labeled *transfer sanity checks* (e.g. reusing a conductance shape and re-tuning only optimizer hyperparameters).
+  - Extra-large (transfer sanity checks only): 2M train, 400k val, 400k test.
   - We do NOT reuse hyperparameters from the small schedule on the larger schedule; we re-tune from scratch.
 - Model: FwFM with the same `embedding_dim` and training loop across variants.
 - Metrics: always report best-trial val logloss and final retrain val/test logloss.
