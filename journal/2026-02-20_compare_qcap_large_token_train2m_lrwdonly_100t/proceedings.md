@@ -29,5 +29,7 @@ Monitoring:
 
 ## Status
 
-IN PROGRESS
+Launched: 2026-02-20T19:38:20+02:00
 
+- Wrapper PID: 2065683 (see `journal/2026-02-20_compare_qcap_large_token_train2m_lrwdonly_100t/pid.txt`)
+- Current run: `runs/bspline/` (python PID recorded in `journal/2026-02-20_compare_qcap_large_token_train2m_lrwdonly_100t/runs/bspline/pid.txt`)
