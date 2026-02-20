@@ -6,6 +6,9 @@ REPO_ROOT="$(cd "${HERE}/../.." && pwd)"
 
 cd "${REPO_ROOT}"
 
+export UV_CACHE_DIR="${UV_CACHE_DIR:-/tmp/uv_cache}"
+mkdir -p "${UV_CACHE_DIR}"
+
 echo "$$" > "${HERE}/pid.txt"
 git rev-parse HEAD > "${HERE}/git_commit.txt"
 date -Is > "${HERE}/started_at.txt"
@@ -70,4 +73,3 @@ run_one \
   "criteo_head2m_hybrid_i5_inverse_square_fixed"
 
 date -Is > "${HERE}/finished_at.txt"
-
