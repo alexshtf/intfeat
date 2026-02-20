@@ -1,0 +1,25 @@
+{
+  "study_name": "hybrid_bspline_qcap_large_token_sl_i5_inverse_square_400k_100t",
+  "storage_url": "sqlite:///journal/2026-02-20_hybrid_bspline_qcap_large_token_sl_i5_inverse_square_400k_100t/study.sqlite3",
+  "target_trials": 100,
+  "completed_trials": 100,
+  "failed_trials": 0,
+  "running_trials": 0,
+  "total_trials_seen": 100,
+  "hpo_seconds": 25226.51030254492,
+  "timestamp": 1771603762.6768236,
+  "best_trial": 61,
+  "best_trial_val_logloss": 0.4724508503960866,
+  "best_params": {
+    "lr": 0.0018783311607265317,
+    "weight_decay": 1.0638596069456267e-08,
+    "sl_u0": 0.5812346533528041,
+    "sl_left_slope": 0.39896576053893634,
+    "sl_right_slope": 9.912300076171999,
+    "sl_potential_kappa": 29.028166370848655,
+    "sl_potential_x0": 355.1417847878527
+  },
+  "final_val_logloss": 0.4724508503960866,
+  "final_test_logloss": 0.46754061602770314,
+  "interaction_matrix_path": "journal/2026-02-20_hybrid_bspline_qcap_large_token_sl_i5_inverse_square_400k_100t/interaction_matrix.npz"
+}
