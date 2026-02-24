@@ -4,10 +4,45 @@ from scipy.linalg import eigh_tridiagonal
 from scipy.special import logit
 
 
-def _build_cs_matrix(cs):
-    head = cs[:-1]
-    tail = cs[1:]
-    main_diagonal = np.r_[head[0], head + tail, tail[-1]]
+def _build_cs_matrix(
+    cs,
+    *,
+    left_bc: str = "neumann_midpoint",
+    right_bc: str = "neumann_midpoint",
+):
+    """Build the (symmetric) tridiagonal stiffness matrix from edge conductances.
+
+    This is the unweighted (graph) Laplacian-like operator on a 1D chain with edge
+    conductances `cs[i]` between nodes i and i+1. Boundary conditions are enforced
+    by modifying the first/last diagonal entries.
+    """
+    cs = np.asarray(cs, dtype=np.float64)
+    if cs.ndim != 1:
+        raise ValueError(f"cs must be 1D, got shape {cs.shape}")
+    if cs.size < 1:
+        raise ValueError("cs must have at least one element")
+
+    num_nodes = int(cs.size + 1)
+    main_diagonal = np.empty(num_nodes, dtype=np.float64)
+    main_diagonal[0] = cs[0]
+    if num_nodes > 2:
+        main_diagonal[1:-1] = cs[:-1] + cs[1:]
+    main_diagonal[-1] = cs[-1]
+
+    if left_bc == "neumann_midpoint":
+        pass
+    elif left_bc == "dirichlet_meshpoint":
+        main_diagonal[0] *= 2.0
+    else:
+        raise ValueError(f"Unknown left_bc: {left_bc!r}")
+
+    if right_bc == "neumann_midpoint":
+        pass
+    elif right_bc == "dirichlet_meshpoint":
+        main_diagonal[-1] *= 2.0
+    else:
+        raise ValueError(f"Unknown right_bc: {right_bc!r}")
+
     off_diagonal = -cs
     return diags_array(
         (off_diagonal, main_diagonal, off_diagonal),
@@ -15,8 +50,16 @@ def _build_cs_matrix(cs):
     )
 
 
-def _compute_eigenfunctions(cs, ws, k, q=None):
-    cs_mat = _build_cs_matrix(cs)
+def _compute_eigenfunctions(
+    cs,
+    ws,
+    k,
+    q=None,
+    *,
+    left_bc: str = "neumann_midpoint",
+    right_bc: str = "neumann_midpoint",
+):
+    cs_mat = _build_cs_matrix(cs, left_bc=left_bc, right_bc=right_bc)
     ds_mat = diags_array((1 / np.sqrt(ws)))
     eig_mat = ds_mat @ cs_mat @ ds_mat
 

@@ -32,4 +32,19 @@ Monitoring:
 Launched: 2026-02-20T19:38:20+02:00
 
 - Wrapper PID: 2065683 (see `journal/2026-02-20_compare_qcap_large_token_train2m_lrwdonly_100t/pid.txt`)
-- Current run: `runs/bspline/` (python PID recorded in `journal/2026-02-20_compare_qcap_large_token_train2m_lrwdonly_100t/runs/bspline/pid.txt`)
+
+### Stage 1: All-Spline (Completed)
+
+- Run dir: `journal/2026-02-20_compare_qcap_large_token_train2m_lrwdonly_100t/runs/bspline/`
+- Optuna: 100 trials (tune `lr`, `weight_decay`)
+- Best trial val logloss: `0.4513791662` (trial 58)
+- Final retrain: val `0.4513791662`, test `0.4555181726`
+- Best params:
+  - `lr=0.0008986722195700843`
+  - `weight_decay=7.111241352134466e-07`
+
+### Stage 2: Hybrid I5 SL (Fixed u-right barrier) (In Progress)
+
+- Run dir: `journal/2026-02-20_compare_qcap_large_token_train2m_lrwdonly_100t/runs/hybrid_u_right/`
+- Python PID: 2199108 (see `.../runs/hybrid_u_right/pid.txt`)
+- Log: `.../runs/hybrid_u_right/run.log`

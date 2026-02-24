@@ -299,6 +299,9 @@ class CriteoFeaturePreprocessor:
                     get_config_value(sl_cfg, "positive_overflow", default="clip_to_cap")
                 ),
                 cap_mode=str(get_config_value(sl_cfg, "cap_mode", default="auto")),
+                right_boundary=str(
+                    get_config_value(sl_cfg, "right_boundary", default="neumann_midpoint")
+                ),
                 conductance_family=conductance_family,
                 uvalley_u0=float(
                     get_config_value(sl_cfg, "conductance.u_exp_valley.u0", default=0.0)

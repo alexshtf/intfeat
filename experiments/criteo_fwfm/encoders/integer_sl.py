@@ -24,6 +24,7 @@ class SLIntegerEncoderConfig:
     conductance_eps: float
     positive_overflow: str
     cap_mode: str = "auto"
+    right_boundary: str = "neumann_midpoint"
     conductance_family: str = "curvature_spec"
     uvalley_u0: float = 0.0
     uvalley_left_slope: float = 1.0
@@ -96,7 +97,13 @@ class SLIntegerEncoder:
         q = self._compute_potential(ws)
 
         num_basis_eff = min(self.num_basis, support_size)
-        _, eigenvectors = _compute_eigenfunctions(cs, ws, num_basis_eff, q=q)
+        _, eigenvectors = _compute_eigenfunctions(
+            cs,
+            ws,
+            num_basis_eff,
+            q=q,
+            right_bc=str(self.config.right_boundary or "neumann_midpoint"),
+        )
 
         self.basis_matrix = np.zeros((support_size, self.num_basis), dtype=np.float32)
         self.basis_matrix[:, :num_basis_eff] = eigenvectors.astype(np.float32)

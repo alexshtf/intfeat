@@ -1,0 +1,1 @@
+===== hybrid_inverse_square (hybrid_bspline_sl) =====

@@ -1,0 +1,18 @@
+{
+  "variant": "hybrid_bspline_sl",
+  "study_name": "criteo_head2m_hybrid_i5_u_right_fixed_hybrid_bspline_sl",
+  "storage_url": "sqlite:////home/alex/git/intfeat/journal/2026-02-20_compare_qcap_large_token_train2m_lrwdonly_100t/runs/hybrid_u_right/study.sqlite3",
+  "target_trials": 100,
+  "completed_trials": 100,
+  "failed_trials": 0,
+  "running_trials": 0,
+  "total_trials_seen": 100,
+  "hpo_seconds": 84105.175960975,
+  "timestamp": 1771788205.265503,
+  "best_trial": 96,
+  "best_trial_val_logloss": 0.452539631364621,
+  "best_params": {
+    "lr": 0.0009094000687036683,
+    "weight_decay": 3.7680616082447534e-07
+  }
+}

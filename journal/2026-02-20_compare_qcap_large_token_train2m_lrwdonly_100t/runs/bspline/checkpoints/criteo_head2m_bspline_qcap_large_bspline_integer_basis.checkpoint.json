@@ -1,0 +1,18 @@
+{
+  "variant": "bspline_integer_basis",
+  "study_name": "criteo_head2m_bspline_qcap_large_bspline_integer_basis",
+  "storage_url": "sqlite:////home/alex/git/intfeat/journal/2026-02-20_compare_qcap_large_token_train2m_lrwdonly_100t/runs/bspline/study.sqlite3",
+  "target_trials": 100,
+  "completed_trials": 100,
+  "failed_trials": 0,
+  "running_trials": 0,
+  "total_trials_seen": 100,
+  "hpo_seconds": 93941.61952808197,
+  "timestamp": 1771703173.2719698,
+  "best_trial": 58,
+  "best_trial_val_logloss": 0.4513791662076746,
+  "best_params": {
+    "lr": 0.0008986722195700843,
+    "weight_decay": 7.111241352134466e-07
+  }
+}
