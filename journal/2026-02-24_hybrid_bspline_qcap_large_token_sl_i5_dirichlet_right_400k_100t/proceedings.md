@@ -49,3 +49,17 @@ Started:
 
 - `2026-02-24T20:04:39+02:00`
 - PID: `2476606` (see `.../pid.txt`)
+
+Completed:
+
+- `2026-02-25T02:57:52+02:00` (see `run.log`)
+
+Best (Optuna):
+
+- Best trial: `95`
+- Best trial val logloss: `0.4725881407`
+
+Final retrain (best params):
+
+- Val logloss: `0.4725881407`
+- Test logloss: `0.4676060331`
