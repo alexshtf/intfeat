@@ -1,0 +1,9 @@
+/home/alex/git/intfeat/.venv/lib/python3.12/site-packages/joblib/_multiprocessing_helpers.py:44: UserWarning: [Errno 13] Permission denied.  joblib will operate in serial mode
+  warnings.warn("%s.  joblib will operate in serial mode" % (e,))
+Loaded rows [0, 400000) in 7.7s
+Loaded rows [400000, 800000) in 8.5s
+Loaded rows [800000, 1200000) in 9.4s
+[I 2026-02-27 10:17:01,565] A new study created in RDB with name: bspline_i6_tune_capq_overflow_400k_100t
+B-spline per-column Optuna: variant=bspline_integer_basis bspline_config=experiments/criteo_fwfm/config/model_bspline_quantile_large_token.yaml tuned_column=I6 completed_before=0 target=100 remaining=100
+/home/alex/git/intfeat/.venv/lib/python3.12/site-packages/torch/cuda/__init__.py:182: UserWarning: CUDA initialization: The NVIDIA driver on your system is too old (found version 11040). Please update your GPU driver by downloading and installing a new version from the URL: http://www.nvidia.com/Download/index.aspx Alternatively, go to: https://pytorch.org to install a PyTorch version that has been compiled with your version of the CUDA driver. (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:109.)
+  return torch._C._cuda_getDeviceCount() > 0
