@@ -1,0 +1,25 @@
+{
+  "study_name": "hybrid_bspline_qcap_large_token_sl_i6_barrier_400k_100t",
+  "storage_url": "sqlite:///journal/2026-02-26_hybrid_bspline_qcap_large_token_sl_i6_tune_400k_100t/study.sqlite3",
+  "target_trials": 100,
+  "completed_trials": 100,
+  "failed_trials": 0,
+  "running_trials": 0,
+  "total_trials_seen": 100,
+  "hpo_seconds": 26974.046179800993,
+  "timestamp": 1772140407.2401228,
+  "best_trial": 74,
+  "best_trial_val_logloss": 0.47215008092030153,
+  "best_params": {
+    "lr": 0.0014504996402307344,
+    "weight_decay": 4.0508276526550636e-08,
+    "sl_u0": 0.6857513173450294,
+    "sl_left_slope": 0.2101849309154991,
+    "sl_right_slope": 0.35149274000847375,
+    "sl_potential_kappa": 1.2917810814954327,
+    "sl_potential_eps": 0.10950439575168318
+  },
+  "final_val_logloss": 0.47215008092030153,
+  "final_test_logloss": 0.4673242587551309,
+  "interaction_matrix_path": "journal/2026-02-26_hybrid_bspline_qcap_large_token_sl_i6_tune_400k_100t/interaction_matrix.npz"
+}
