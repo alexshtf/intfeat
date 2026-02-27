@@ -225,6 +225,11 @@ def parse_args() -> argparse.Namespace:
         default=5,
         help="Number of leading eigenfunctions to plot (k=0..plot_k-1).",
     )
+    p.add_argument(
+        "--plot-hist",
+        action="store_true",
+        help="Also plot a histogram curve (log1p counts) for positive values (<=cap).",
+    )
     p.add_argument("--width", type=int, default=72)
     p.add_argument("--height", type=int, default=10)
     p.add_argument("--charset", type=str, default="braille", choices=["ascii", "block", "braille"])
@@ -242,6 +247,22 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
+def _best_params_from_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    best = payload.get("best_params")
+    if isinstance(best, dict):
+        return dict(best)
+
+    results = payload.get("results")
+    if isinstance(results, list) and results:
+        first = results[0]
+        if isinstance(first, dict):
+            best2 = first.get("best_params")
+            if isinstance(best2, dict):
+                return dict(best2)
+
+    return {}
+
+
 def main() -> int:
     args = parse_args()
     payload = json.loads(args.results_json.read_text())
@@ -252,9 +273,7 @@ def main() -> int:
     train_end = int(train_end)
     n_rows = train_end - train_start
 
-    results = payload.get("results") or []
-    best_entry = results[0] if results else {}
-    best = dict(best_entry.get("best_params") or {})
+    best = _best_params_from_payload(payload)
 
     # Defaults: match the Criteo hybrid setup (quantile cap + per-column LARGE token),
     # but allow config-based or Optuna-tuned overrides.
@@ -395,6 +414,33 @@ def main() -> int:
     )
     print(f"plots: x in [1, {cap_value}] (sampled uniformly in u), charset={args.charset}")
     print()
+
+    if args.plot_hist:
+        missing = int(series.isna().sum())
+        ints = series.dropna().astype(int)
+        non_positive = int((ints <= 0).sum())
+        positive = ints[ints > 0].to_numpy(dtype=np.int64, copy=False)
+
+        overflow = int((positive > cap_value).sum())
+        in_range = positive[(positive >= 1) & (positive <= cap_value)]
+        counts = np.bincount(in_range - 1, minlength=support_size).astype(np.float64)
+        y_hist = np.log1p(counts[idx_nodes]).tolist()
+
+        rendered_hist = terminal_plot.render_xy_plot(
+            x_nodes,
+            y_hist,
+            mode="line",
+            width=int(args.width),
+            height=int(args.height),
+            title=(
+                f"{args.column} histogram log1p(count) (pos<=cap; overflow={overflow}, "
+                f"nonpos={non_positive}, missing={missing})"
+            ),
+            ascii_only=False,
+            charset=str(args.charset),
+        )
+        print(rendered_hist)
+        print()
 
     y_c = cs[idx_edges].astype(np.float64, copy=False).tolist()
     rendered_c = terminal_plot.render_xy_plot(
