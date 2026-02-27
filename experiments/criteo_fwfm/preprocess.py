@@ -334,49 +334,60 @@ class CriteoFeaturePreprocessor:
     def _fit_bspline_integer_encoders(
         self, train_df: pd.DataFrame, integer_columns: list[str]
     ) -> dict[str, BSplineIntegerEncoder]:
-        bspline_config = BSplineIntegerEncoderConfig(
-            cap_max=int(
-                get_config_value(self.config, "model.integer.bspline.cap_max", default=10_000_000)
-            ),
-            cap_mode=str(
-                get_config_value(self.config, "model.integer.bspline.cap_mode", default="max")
-            ),
-            cap_quantile=float(
-                get_config_value(
-                    self.config, "model.integer.bspline.cap_quantile", default=0.99
-                )
-            ),
-            cap_quantile_factor=float(
-                get_config_value(
-                    self.config,
-                    "model.integer.bspline.cap_quantile_factor",
-                    default=1.1,
-                )
-            ),
-            input_map=str(
-                get_config_value(
-                    self.config,
-                    "model.integer.bspline.input_map",
-                    default="log1p_cap_to_unit",
-                )
-            ),
-            out_min=float(
-                get_config_value(self.config, "model.integer.bspline.out_min", default=-1.0)
-            ),
-            out_max=float(
-                get_config_value(self.config, "model.integer.bspline.out_max", default=1.0)
-            ),
-            positive_overflow=str(
-                get_config_value(
-                    self.config,
-                    "model.integer.bspline.positive_overflow",
-                    default="clip_to_cap",
-                )
-            ),
+        bspline_cfg_raw = get_config_value(self.config, "model.integer.bspline", default={})
+        if bspline_cfg_raw is None:
+            bspline_cfg_raw = {}
+        if not isinstance(bspline_cfg_raw, dict):
+            raise ValueError("model.integer.bspline must be a mapping")
+
+        per_column = get_config_value(
+            self.config, "model.integer.bspline.per_column", default={}
         )
+        if per_column is None:
+            per_column = {}
+        if not isinstance(per_column, dict):
+            raise ValueError("model.integer.bspline.per_column must be a mapping")
+
+        bspline_base = dict(bspline_cfg_raw)
+        bspline_base.pop("per_column", None)
 
         encoders: dict[str, BSplineIntegerEncoder] = {}
         for column in integer_columns:
+            overrides = per_column.get(column, {})
+            if overrides is None:
+                overrides = {}
+            if not isinstance(overrides, dict):
+                raise ValueError(
+                    f"model.integer.bspline.per_column.{column} must be a mapping, got {type(overrides)}"
+                )
+
+            bspline_cfg = _deep_merge_dict(bspline_base, overrides)
+            bspline_config = BSplineIntegerEncoderConfig(
+                cap_max=int(get_config_value(bspline_cfg, "cap_max", default=10_000_000)),
+                cap_mode=str(get_config_value(bspline_cfg, "cap_mode", default="max")),
+                cap_quantile=float(
+                    get_config_value(bspline_cfg, "cap_quantile", default=0.99)
+                ),
+                cap_quantile_factor=float(
+                    get_config_value(bspline_cfg, "cap_quantile_factor", default=1.1)
+                ),
+                input_map=str(
+                    get_config_value(
+                        bspline_cfg,
+                        "input_map",
+                        default="log1p_cap_to_unit",
+                    )
+                ),
+                out_min=float(get_config_value(bspline_cfg, "out_min", default=-1.0)),
+                out_max=float(get_config_value(bspline_cfg, "out_max", default=1.0)),
+                positive_overflow=str(
+                    get_config_value(
+                        bspline_cfg,
+                        "positive_overflow",
+                        default="clip_to_cap",
+                    )
+                ),
+            )
             encoder = BSplineIntegerEncoder(bspline_config)
             encoder.fit(train_df[column])
             encoders[column] = encoder
