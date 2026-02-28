@@ -1,0 +1,22 @@
+{
+  "study_name": "bspline_i6_tune_capq_overflow_400k_100t",
+  "storage_url": "sqlite:///journal/2026-02-27_bspline_i6_tune_cap_quantile_overflow_400k_100t/study.sqlite3",
+  "target_trials": 100,
+  "completed_trials": 100,
+  "failed_trials": 0,
+  "running_trials": 0,
+  "total_trials_seen": 100,
+  "hpo_seconds": 58483.056561819045,
+  "timestamp": 1772239043.015952,
+  "best_trial": 90,
+  "best_trial_val_logloss": 0.47210773192759703,
+  "best_params": {
+    "lr": 0.001814406340941725,
+    "weight_decay": 1.1298766673214055e-07,
+    "bspline_cap_quantile": 0.9910423377963541,
+    "bspline_positive_overflow": "clip_to_cap"
+  },
+  "final_val_logloss": 0.47210773192759703,
+  "final_test_logloss": 0.4673236533815079,
+  "interaction_matrix_path": "journal/2026-02-27_bspline_i6_tune_cap_quantile_overflow_400k_100t/interaction_matrix.npz"
+}

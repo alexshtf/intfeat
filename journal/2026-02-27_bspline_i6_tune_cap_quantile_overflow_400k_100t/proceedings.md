@@ -46,3 +46,18 @@ Started:
 
 - `2026-02-27T10:16:40+02:00`
 - PID: `2708658` (see `.../pid.txt`)
+
+Finished:
+
+- `2026-02-28T02:37:00+02:00` (approx; see end of `run.log` timestamps)
+
+Best trial (Optuna):
+
+- Trial: `90`
+- Val logloss: `0.4721077319`
+- Test logloss (retrain with best params): `0.4673236534`
+- Best params:
+  - `lr`: `0.001814406340941725`
+  - `weight_decay`: `1.1298766673214055e-07`
+  - `I6.cap_quantile`: `0.9910423377963541`
+  - `I6.positive_overflow`: `clip_to_cap`
